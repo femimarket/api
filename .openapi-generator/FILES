@@ -37,7 +37,6 @@ Sources/Api/Models/ApiChatRole.swift
 Sources/Api/Models/ApiKey.swift
 Sources/Api/Models/ApiPay.swift
 Sources/Api/Models/ApiPayProvider.swift
-Sources/Api/Models/ApiPricing.swift
 Sources/Api/Models/ApiStatus.swift
 Sources/Api/Models/ApplePay.swift
 Sources/Api/Models/ApplePayStatus.swift
@@ -70,7 +69,6 @@ docs/ApiKey.md
 docs/ApiKeyRouteAPI.md
 docs/ApiPay.md
 docs/ApiPayProvider.md
-docs/ApiPricing.md
 docs/ApiStatus.md
 docs/ApplePay.md
 docs/ApplePayRouteAPI.md

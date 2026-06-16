@@ -12,4 +12,5 @@ public enum ApiAiModel: String, Sendable, Codable, CaseIterable {
     case nanoBanana2 = "NanoBanana2"
     case flux2Pro = "Flux2Pro"
     case ltx23a2v = "Ltx2_3A2V"
+    case ngrokText = "NgrokText"
 }

@@ -25,14 +25,13 @@ public struct API: Sendable, Codable, Hashable {
     public var messages: [ApiChatMessage]
     public var model: ApiAiModel
     public var pay: ApiPay
-    public var pricing: ApiPricing
     public var prompt: String
     /** transient, managed by server */
     public var requestId: String
     public var status: ApiStatus
     public var userId: String
 
-    public init(action: ApiAction, audio: String, balance: Int64, credit: Int64, file: String, id: UUID, image: String, messages: [ApiChatMessage], model: ApiAiModel, pay: ApiPay, pricing: ApiPricing, prompt: String, requestId: String, status: ApiStatus, userId: String) {
+    public init(action: ApiAction, audio: String, balance: Int64, credit: Int64, file: String, id: UUID, image: String, messages: [ApiChatMessage], model: ApiAiModel, pay: ApiPay, prompt: String, requestId: String, status: ApiStatus, userId: String) {
         self.action = action
         self.audio = audio
         self.balance = balance
@@ -43,7 +42,6 @@ public struct API: Sendable, Codable, Hashable {
         self.messages = messages
         self.model = model
         self.pay = pay
-        self.pricing = pricing
         self.prompt = prompt
         self.requestId = requestId
         self.status = status
@@ -61,7 +59,6 @@ public struct API: Sendable, Codable, Hashable {
         case messages
         case model
         case pay
-        case pricing
         case prompt
         case requestId = "request_id"
         case status
@@ -82,7 +79,6 @@ public struct API: Sendable, Codable, Hashable {
         try container.encode(messages, forKey: .messages)
         try container.encode(model, forKey: .model)
         try container.encode(pay, forKey: .pay)
-        try container.encode(pricing, forKey: .pricing)
         try container.encode(prompt, forKey: .prompt)
         try container.encode(requestId, forKey: .requestId)
         try container.encode(status, forKey: .status)

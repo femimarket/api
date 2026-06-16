@@ -13,7 +13,6 @@ Name | Type | Description | Notes
 **messages** | [ApiChatMessage] | default value is non-empty array | 
 **model** | [**ApiAiModel**](ApiAiModel.md) |  | 
 **pay** | [**ApiPay**](ApiPay.md) |  | 
-**pricing** | [**ApiPricing**](ApiPricing.md) |  | 
 **prompt** | **String** |  | 
 **requestId** | **String** | transient, managed by server | 
 **status** | [**ApiStatus**](ApiStatus.md) |  | 

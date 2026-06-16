@@ -51,7 +51,6 @@ Class | Method | HTTP request | Description
  - [ApiKey](docs/ApiKey.md)
  - [ApiPay](docs/ApiPay.md)
  - [ApiPayProvider](docs/ApiPayProvider.md)
- - [ApiPricing](docs/ApiPricing.md)
  - [ApiStatus](docs/ApiStatus.md)
  - [ApplePay](docs/ApplePay.md)
  - [ApplePayStatus](docs/ApplePayStatus.md)

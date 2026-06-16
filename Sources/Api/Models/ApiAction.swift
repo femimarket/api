@@ -9,9 +9,5 @@ import Foundation
 
 public enum ApiAction: String, Sendable, Codable, CaseIterable {
     case generate = "Generate"
-    case poll = "Poll"
     case pay = "Pay"
-    case chat = "Chat"
-    case balance = "Balance"
-    case pricing = "Pricing"
 }
