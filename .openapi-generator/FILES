@@ -13,7 +13,6 @@ Sources/Api/APIs/ProjectRouteAPI.swift
 Sources/Api/APIs/RevolutRouteAPI.swift
 Sources/Api/APIs/SolanaRouteAPI.swift
 Sources/Api/APIs/SquareRouteAPI.swift
-Sources/Api/APIs/StripeRouteAPI.swift
 Sources/Api/APIs/UploadRouteAPI.swift
 Sources/Api/APIs/WiseAPI.swift
 Sources/Api/APIs/WiseRouteAPI.swift
@@ -47,7 +46,6 @@ Sources/Api/Models/CharacterAlignment.swift
 Sources/Api/Models/Episode.swift
 Sources/Api/Models/Faq.swift
 Sources/Api/Models/LyricSync.swift
-Sources/Api/Models/Model.swift
 Sources/Api/Models/Pay.swift
 Sources/Api/Models/PayProvider.swift
 Sources/Api/Models/PayStatus.swift
@@ -83,7 +81,6 @@ docs/Episode.md
 docs/Faq.md
 docs/LyricSync.md
 docs/LyricSyncRouteAPI.md
-docs/Model.md
 docs/Pay.md
 docs/PayProvider.md
 docs/PayRouteAPI.md
@@ -100,7 +97,6 @@ docs/SolanaRouteAPI.md
 docs/Square.md
 docs/SquareRouteAPI.md
 docs/Status.md
-docs/StripeRouteAPI.md
 docs/Upload.md
 docs/UploadRouteAPI.md
 docs/Wise.md

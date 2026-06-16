@@ -10,4 +10,5 @@ import Foundation
 public enum ApiPayProvider: String, Sendable, Codable, CaseIterable {
     case apple = "Apple"
     case google = "Google"
+    case stripe = "Stripe"
 }

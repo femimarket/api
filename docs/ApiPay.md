@@ -7,8 +7,9 @@ Name | Type | Description | Notes
 **id** | **UUID** | uuid v7 | 
 **jws** | **String** | Signed transaction JWS from StoreKit; the input to Apple verification. | 
 **loaded** | **Bool** |  | 
-**orderId** | **String** | Google&#39;s per-purchase &#x60;orderId&#x60;, returned by the Play Developer API (not the client). Not used for dedup — &#x60;ref_id&#x60; is — because promo-code purchases may have no &#x60;orderId&#x60;. | [optional] 
+**orderId** | **String** | Google&#39;s per-purchase &#x60;orderId&#x60;, returned by the Play Developer API (not the client). Not used for dedup — &#x60;ref_id&#x60; is — because promo-code purchases may have no &#x60;orderId&#x60;. On the Stripe path, the same field carries the &#x60;payment_intent&#x60; id returned by &#x60;checkout.session.completed&#x60;. | [optional] 
 **packageName** | **String** |  | 
+**paymentUrl** | **String** | Stripe only. Hosted-payment URL returned by &#x60;checkout.sessions.create&#x60; — empty until the server creates the session. | 
 **price** | **Int64** |  | 
 **productId** | **String** |  | 
 **provider** | [**ApiPayProvider**](ApiPayProvider.md) | Selects the verification path: Apple App Store vs Google Play. | 

@@ -36,7 +36,6 @@ Class | Method | HTTP request | Description
 *RevolutRouteAPI* | [**revolut**](docs/RevolutRouteAPI.md#revolut) | **POST** /revolut | 
 *SolanaRouteAPI* | [**solana**](docs/SolanaRouteAPI.md#solana) | **POST** /solana | 
 *SquareRouteAPI* | [**square**](docs/SquareRouteAPI.md#square) | **POST** /square | 
-*StripeRouteAPI* | [**stripe**](docs/StripeRouteAPI.md#stripe) | **POST** /stripe | 
 *UploadRouteAPI* | [**upload**](docs/UploadRouteAPI.md#upload) | **POST** /upload | 
 *WiseAPI* | [**wiseCheck**](docs/WiseAPI.md#wisecheck) | **POST** /wise_check | 
 *WiseRouteAPI* | [**wise**](docs/WiseRouteAPI.md#wise) | **POST** /wise | 
@@ -61,7 +60,6 @@ Class | Method | HTTP request | Description
  - [Episode](docs/Episode.md)
  - [Faq](docs/Faq.md)
  - [LyricSync](docs/LyricSync.md)
- - [Model](docs/Model.md)
  - [Pay](docs/Pay.md)
  - [PayProvider](docs/PayProvider.md)
  - [PayStatus](docs/PayStatus.md)

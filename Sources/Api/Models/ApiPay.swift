@@ -16,9 +16,11 @@ public struct ApiPay: Sendable, Codable, Hashable {
     /** Signed transaction JWS from StoreKit; the input to Apple verification. */
     public var jws: String
     public var loaded: Bool
-    /** Google's per-purchase `orderId`, returned by the Play Developer API (not the client). Not used for dedup — `ref_id` is — because promo-code purchases may have no `orderId`. */
+    /** Google's per-purchase `orderId`, returned by the Play Developer API (not the client). Not used for dedup — `ref_id` is — because promo-code purchases may have no `orderId`. On the Stripe path, the same field carries the `payment_intent` id returned by `checkout.session.completed`. */
     public var orderId: String?
     public var packageName: String
+    /** Stripe only. Hosted-payment URL returned by `checkout.sessions.create` — empty until the server creates the session. */
+    public var paymentUrl: String
     public var price: Int64
     public var productId: String
     /** Selects the verification path: Apple App Store vs Google Play. */
@@ -27,13 +29,14 @@ public struct ApiPay: Sendable, Codable, Hashable {
     public var refId: String
     public var userId: String
 
-    public init(currency: String, id: UUID, jws: String, loaded: Bool, orderId: String? = nil, packageName: String, price: Int64, productId: String, provider: ApiPayProvider, refId: String, userId: String) {
+    public init(currency: String, id: UUID, jws: String, loaded: Bool, orderId: String? = nil, packageName: String, paymentUrl: String, price: Int64, productId: String, provider: ApiPayProvider, refId: String, userId: String) {
         self.currency = currency
         self.id = id
         self.jws = jws
         self.loaded = loaded
         self.orderId = orderId
         self.packageName = packageName
+        self.paymentUrl = paymentUrl
         self.price = price
         self.productId = productId
         self.provider = provider
@@ -48,6 +51,7 @@ public struct ApiPay: Sendable, Codable, Hashable {
         case loaded
         case orderId = "order_id"
         case packageName = "package_name"
+        case paymentUrl = "payment_url"
         case price
         case productId = "product_id"
         case provider
@@ -65,6 +69,7 @@ public struct ApiPay: Sendable, Codable, Hashable {
         try container.encode(loaded, forKey: .loaded)
         try container.encodeIfPresent(orderId, forKey: .orderId)
         try container.encode(packageName, forKey: .packageName)
+        try container.encode(paymentUrl, forKey: .paymentUrl)
         try container.encode(price, forKey: .price)
         try container.encode(productId, forKey: .productId)
         try container.encode(provider, forKey: .provider)
