@@ -50,26 +50,12 @@ open class ApiAPI {
 
     /**
 
-     - parameter action: (form)  
-     - parameter audio: (form) filename of already uploaded audio else default 
-     - parameter balance: (form)  
-     - parameter credit: (form)  
-     - parameter file: (form) filename of result to retrieve 
-     - parameter id: (form) uuid v7 
-     - parameter image: (form) filename of already uploaded image else default 
-     - parameter messages: (form) default value is non-empty array 
-     - parameter model: (form)  
-     - parameter pay: (form)  
-     - parameter pricing: (form)  
-     - parameter prompt: (form)  
-     - parameter requestId: (form) transient, managed by server 
-     - parameter status: (form)  
-     - parameter userId: (form)  
+     - parameter API: (body)  
      - parameter apiConfiguration: The configuration for the http request.
      - returns: API
      */
-    open class func api(action: ApiAction, audio: String, balance: Int64, credit: Int64, file: String, id: UUID, image: String, messages: [ApiChatMessage], model: ApiAiModel, pay: ApiPay, pricing: ApiPricing, prompt: String, requestId: String, status: ApiStatus, userId: String, apiConfiguration: ApiAPIConfiguration = ApiAPIConfiguration.shared) async throws(ErrorResponse) -> API {
-        return try await apiWithRequestBuilder(action: action, audio: audio, balance: balance, credit: credit, file: file, id: id, image: image, messages: messages, model: model, pay: pay, pricing: pricing, prompt: prompt, requestId: requestId, status: status, userId: userId, apiConfiguration: apiConfiguration).execute().body
+    open class func apiHandler(API: API, apiConfiguration: ApiAPIConfiguration = ApiAPIConfiguration.shared) async throws(ErrorResponse) -> API {
+        return try await apiHandlerWithRequestBuilder(API: API, apiConfiguration: apiConfiguration).execute().body
     }
 
     /**
@@ -77,49 +63,19 @@ open class ApiAPI {
      - Bearer Token:
        - type: http
        - name: bearer
-     - parameter action: (form)  
-     - parameter audio: (form) filename of already uploaded audio else default 
-     - parameter balance: (form)  
-     - parameter credit: (form)  
-     - parameter file: (form) filename of result to retrieve 
-     - parameter id: (form) uuid v7 
-     - parameter image: (form) filename of already uploaded image else default 
-     - parameter messages: (form) default value is non-empty array 
-     - parameter model: (form)  
-     - parameter pay: (form)  
-     - parameter pricing: (form)  
-     - parameter prompt: (form)  
-     - parameter requestId: (form) transient, managed by server 
-     - parameter status: (form)  
-     - parameter userId: (form)  
+     - parameter API: (body)  
      - parameter apiConfiguration: The configuration for the http request.
      - returns: RequestBuilder<API> 
      */
-    open class func apiWithRequestBuilder(action: ApiAction, audio: String, balance: Int64, credit: Int64, file: String, id: UUID, image: String, messages: [ApiChatMessage], model: ApiAiModel, pay: ApiPay, pricing: ApiPricing, prompt: String, requestId: String, status: ApiStatus, userId: String, apiConfiguration: ApiAPIConfiguration = ApiAPIConfiguration.shared) -> RequestBuilder<API> {
+    open class func apiHandlerWithRequestBuilder(API: API, apiConfiguration: ApiAPIConfiguration = ApiAPIConfiguration.shared) -> RequestBuilder<API> {
         let localVariablePath = "/api"
         let localVariableURLString = apiConfiguration.basePath + localVariablePath
-        var localVariableParameters: [String: any Sendable] = [:]
-        appendBracket(into: &localVariableParameters, baseName: "action", value: action)
-        appendBracket(into: &localVariableParameters, baseName: "audio", value: audio)
-        appendBracket(into: &localVariableParameters, baseName: "balance", value: balance)
-        appendBracket(into: &localVariableParameters, baseName: "credit", value: credit)
-        appendBracket(into: &localVariableParameters, baseName: "file", value: file)
-        appendBracket(into: &localVariableParameters, baseName: "id", value: id)
-        appendBracket(into: &localVariableParameters, baseName: "image", value: image)
-        appendBracket(into: &localVariableParameters, baseName: "messages", value: messages)
-        appendBracket(into: &localVariableParameters, baseName: "model", value: model)
-        appendBracket(into: &localVariableParameters, baseName: "pay", value: pay)
-        appendBracket(into: &localVariableParameters, baseName: "pricing", value: pricing)
-        appendBracket(into: &localVariableParameters, baseName: "prompt", value: prompt)
-        appendBracket(into: &localVariableParameters, baseName: "request_id", value: requestId)
-        appendBracket(into: &localVariableParameters, baseName: "status", value: status)
-        appendBracket(into: &localVariableParameters, baseName: "user_id", value: userId)
-        
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: API, codableHelper: apiConfiguration.codableHelper)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
         let localVariableNillableHeaders: [String: (any Sendable)?] = [
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
         ]
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
