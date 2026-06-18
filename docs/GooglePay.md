@@ -1,13 +1,15 @@
-# LyricSync
+# GooglePay
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**audio** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
-**characters** | [CharacterAlignment] | return | 
-**lyrics** | **String** |  | 
+**credit** | **Int64** |  | 
+**loaded** | **Bool** |  | 
+**orderId** | **String** |  | [optional] 
+**packageName** | **String** |  | 
+**productId** | **String** |  | 
+**purchaseToken** | **String** |  | 
 **type** | **String** |  | 
-**words** | [WordAlignment] | return | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

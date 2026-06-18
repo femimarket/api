@@ -1,13 +1,12 @@
-# LyricSync
+# Flux2Pro
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**audio** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
-**characters** | [CharacterAlignment] | return | 
-**lyrics** | **String** |  | 
+**falRequestId** | **String** |  | 
+**file** | **String** | base64 return | 
+**prompt** | **String** |  | 
 **type** | **String** |  | 
-**words** | [WordAlignment] | return | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

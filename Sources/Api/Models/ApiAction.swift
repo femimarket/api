@@ -7,7 +7,69 @@
 
 import Foundation
 
-public enum ApiAction: String, Sendable, Codable, CaseIterable {
-    case generate = "Generate"
-    case pay = "Pay"
+public enum ApiAction: Sendable, Codable, Hashable {
+    case typeApplePay(ApplePay)
+    case typeCharge(Charge)
+    case typeClaudeSonnet46(ClaudeSonnet46)
+    case typeFlux2Pro(Flux2Pro)
+    case typeGooglePay(GooglePay)
+    case typeLtx23A2V(Ltx23A2V)
+    case typeLyricSync(LyricSync)
+    case typeNanoBanana2(NanoBanana2)
+    case typeStripe(Stripe)
+    case typeZImageTurbo(ZImageTurbo)
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .typeApplePay(let value):
+            try container.encode(value)
+        case .typeCharge(let value):
+            try container.encode(value)
+        case .typeClaudeSonnet46(let value):
+            try container.encode(value)
+        case .typeFlux2Pro(let value):
+            try container.encode(value)
+        case .typeGooglePay(let value):
+            try container.encode(value)
+        case .typeLtx23A2V(let value):
+            try container.encode(value)
+        case .typeLyricSync(let value):
+            try container.encode(value)
+        case .typeNanoBanana2(let value):
+            try container.encode(value)
+        case .typeStripe(let value):
+            try container.encode(value)
+        case .typeZImageTurbo(let value):
+            try container.encode(value)
+        }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(ApplePay.self) {
+            self = .typeApplePay(value)
+        } else if let value = try? container.decode(Charge.self) {
+            self = .typeCharge(value)
+        } else if let value = try? container.decode(ClaudeSonnet46.self) {
+            self = .typeClaudeSonnet46(value)
+        } else if let value = try? container.decode(Flux2Pro.self) {
+            self = .typeFlux2Pro(value)
+        } else if let value = try? container.decode(GooglePay.self) {
+            self = .typeGooglePay(value)
+        } else if let value = try? container.decode(Ltx23A2V.self) {
+            self = .typeLtx23A2V(value)
+        } else if let value = try? container.decode(LyricSync.self) {
+            self = .typeLyricSync(value)
+        } else if let value = try? container.decode(NanoBanana2.self) {
+            self = .typeNanoBanana2(value)
+        } else if let value = try? container.decode(Stripe.self) {
+            self = .typeStripe(value)
+        } else if let value = try? container.decode(ZImageTurbo.self) {
+            self = .typeZImageTurbo(value)
+        } else {
+            throw DecodingError.typeMismatch(Self.Type.self, .init(codingPath: decoder.codingPath, debugDescription: "Unable to decode instance of ApiAction"))
+        }
+    }
 }
+

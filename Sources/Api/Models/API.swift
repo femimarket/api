@@ -11,56 +11,25 @@ import Foundation
 public struct API: Sendable, Codable, Hashable {
 
     public var action: ApiAction
-    /** input audio as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side */
-    public var audio: String
-    public var balance: Int64
+    /** return only */
     public var credit: Int64
-    /** filename of result to retrieve */
-    public var file: String
-    /** uuid v7 */
+    /** uuid v7 preferred */
     public var id: UUID
-    /** input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side */
-    public var image: String
-    /** default value is non-empty array */
-    public var messages: [ApiChatMessage]
-    public var model: ApiAiModel
-    public var pay: ApiPay
-    public var prompt: String
-    /** transient, managed by server */
-    public var requestId: String
     public var status: ApiStatus
     public var userId: String
 
-    public init(action: ApiAction, audio: String, balance: Int64, credit: Int64, file: String, id: UUID, image: String, messages: [ApiChatMessage], model: ApiAiModel, pay: ApiPay, prompt: String, requestId: String, status: ApiStatus, userId: String) {
+    public init(action: ApiAction, credit: Int64, id: UUID, status: ApiStatus, userId: String) {
         self.action = action
-        self.audio = audio
-        self.balance = balance
         self.credit = credit
-        self.file = file
         self.id = id
-        self.image = image
-        self.messages = messages
-        self.model = model
-        self.pay = pay
-        self.prompt = prompt
-        self.requestId = requestId
         self.status = status
         self.userId = userId
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case action
-        case audio
-        case balance
         case credit
-        case file
         case id
-        case image
-        case messages
-        case model
-        case pay
-        case prompt
-        case requestId = "request_id"
         case status
         case userId = "user_id"
     }
@@ -70,17 +39,8 @@ public struct API: Sendable, Codable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(action, forKey: .action)
-        try container.encode(audio, forKey: .audio)
-        try container.encode(balance, forKey: .balance)
         try container.encode(credit, forKey: .credit)
-        try container.encode(file, forKey: .file)
         try container.encode(id, forKey: .id)
-        try container.encode(image, forKey: .image)
-        try container.encode(messages, forKey: .messages)
-        try container.encode(model, forKey: .model)
-        try container.encode(pay, forKey: .pay)
-        try container.encode(prompt, forKey: .prompt)
-        try container.encode(requestId, forKey: .requestId)
         try container.encode(status, forKey: .status)
         try container.encode(userId, forKey: .userId)
     }

@@ -9,34 +9,31 @@ import Foundation
 
 public struct LyricSync: Sendable, Codable, Hashable {
 
+    public enum ModelType: String, Sendable, Codable, CaseIterable {
+        case lyricSync = "LyricSync"
+    }
+    /** input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side */
     public var audio: String
-    public var characters: [CharacterAlignment]?
-    public var credit: Int64?
-    public var id: UUID
-    public var loss: Double?
+    /** return */
+    public var characters: [CharacterAlignment]
     public var lyrics: String
-    public var userId: String?
-    public var words: [WordAlignment]?
+    public var type: ModelType
+    /** return */
+    public var words: [WordAlignment]
 
-    public init(audio: String, characters: [CharacterAlignment]? = nil, credit: Int64? = nil, id: UUID, loss: Double? = nil, lyrics: String, userId: String? = nil, words: [WordAlignment]? = nil) {
+    public init(audio: String, characters: [CharacterAlignment], lyrics: String, type: ModelType, words: [WordAlignment]) {
         self.audio = audio
         self.characters = characters
-        self.credit = credit
-        self.id = id
-        self.loss = loss
         self.lyrics = lyrics
-        self.userId = userId
+        self.type = type
         self.words = words
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case audio
         case characters
-        case credit
-        case id
-        case loss
         case lyrics
-        case userId = "user_id"
+        case type
         case words
     }
 
@@ -45,15 +42,10 @@ public struct LyricSync: Sendable, Codable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(audio, forKey: .audio)
-        try container.encodeIfPresent(characters, forKey: .characters)
-        try container.encodeIfPresent(credit, forKey: .credit)
-        try container.encode(id, forKey: .id)
-        try container.encodeIfPresent(loss, forKey: .loss)
+        try container.encode(characters, forKey: .characters)
         try container.encode(lyrics, forKey: .lyrics)
-        try container.encodeIfPresent(userId, forKey: .userId)
-        try container.encodeIfPresent(words, forKey: .words)
+        try container.encode(type, forKey: .type)
+        try container.encode(words, forKey: .words)
     }
 }
 
-
-extension LyricSync: Identifiable {}
