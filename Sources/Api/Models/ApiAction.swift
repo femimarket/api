@@ -45,30 +45,42 @@ public enum ApiAction: Sendable, Codable, Hashable {
         }
     }
 
+    private enum DiscriminatorCodingKey: String, CodingKey {
+        case type = "type"
+    }
+
     public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let value = try? container.decode(ApplePay.self) {
-            self = .typeApplePay(value)
-        } else if let value = try? container.decode(Charge.self) {
-            self = .typeCharge(value)
-        } else if let value = try? container.decode(ClaudeSonnet46.self) {
-            self = .typeClaudeSonnet46(value)
-        } else if let value = try? container.decode(Flux2Pro.self) {
-            self = .typeFlux2Pro(value)
-        } else if let value = try? container.decode(GooglePay.self) {
-            self = .typeGooglePay(value)
-        } else if let value = try? container.decode(Ltx23A2V.self) {
-            self = .typeLtx23A2V(value)
-        } else if let value = try? container.decode(LyricSync.self) {
-            self = .typeLyricSync(value)
-        } else if let value = try? container.decode(NanoBanana2.self) {
-            self = .typeNanoBanana2(value)
-        } else if let value = try? container.decode(Stripe.self) {
-            self = .typeStripe(value)
-        } else if let value = try? container.decode(ZImageTurbo.self) {
-            self = .typeZImageTurbo(value)
-        } else {
-            throw DecodingError.typeMismatch(Self.Type.self, .init(codingPath: decoder.codingPath, debugDescription: "Unable to decode instance of ApiAction"))
+        let keyedContainer = try decoder.container(keyedBy: DiscriminatorCodingKey.self)
+        let discriminatorValue = try keyedContainer.decode(String.self, forKey: .type)
+
+        switch discriminatorValue {
+        case "ApplePay":
+            self = .typeApplePay(try ApplePay(from: decoder))
+        case "Charge":
+            self = .typeCharge(try Charge(from: decoder))
+        case "ClaudeSonnet4_6":
+            self = .typeClaudeSonnet46(try ClaudeSonnet46(from: decoder))
+        case "Flux2Pro":
+            self = .typeFlux2Pro(try Flux2Pro(from: decoder))
+        case "GooglePay":
+            self = .typeGooglePay(try GooglePay(from: decoder))
+        case "Ltx2_3A2V":
+            self = .typeLtx23A2V(try Ltx23A2V(from: decoder))
+        case "LyricSync":
+            self = .typeLyricSync(try LyricSync(from: decoder))
+        case "NanoBanana2":
+            self = .typeNanoBanana2(try NanoBanana2(from: decoder))
+        case "Stripe":
+            self = .typeStripe(try Stripe(from: decoder))
+        case "ZImageTurbo":
+            self = .typeZImageTurbo(try ZImageTurbo(from: decoder))
+        default:
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Unknown discriminator value '\(discriminatorValue)' for ApiAction"
+                )
+            )
         }
     }
 }
