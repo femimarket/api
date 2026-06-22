@@ -42,6 +42,7 @@ Class | Method | HTTP request | Description
  - [CharacterAlignment](docs/CharacterAlignment.md)
  - [Charge](docs/Charge.md)
  - [ClaudeSonnet46](docs/ClaudeSonnet46.md)
+ - [Flux2DevI2I](docs/Flux2DevI2I.md)
  - [Flux2KleinI2I](docs/Flux2KleinI2I.md)
  - [Flux2Pro](docs/Flux2Pro.md)
  - [GooglePay](docs/GooglePay.md)

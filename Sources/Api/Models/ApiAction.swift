@@ -11,6 +11,7 @@ public enum ApiAction: Sendable, Codable, Hashable {
     case typeApplePay(ApplePay)
     case typeCharge(Charge)
     case typeClaudeSonnet46(ClaudeSonnet46)
+    case typeFlux2DevI2I(Flux2DevI2I)
     case typeFlux2KleinI2I(Flux2KleinI2I)
     case typeFlux2Pro(Flux2Pro)
     case typeGooglePay(GooglePay)
@@ -28,6 +29,8 @@ public enum ApiAction: Sendable, Codable, Hashable {
         case .typeCharge(let value):
             try container.encode(value)
         case .typeClaudeSonnet46(let value):
+            try container.encode(value)
+        case .typeFlux2DevI2I(let value):
             try container.encode(value)
         case .typeFlux2KleinI2I(let value):
             try container.encode(value)
@@ -63,6 +66,8 @@ public enum ApiAction: Sendable, Codable, Hashable {
             self = .typeCharge(try Charge(from: decoder))
         case "ClaudeSonnet4_6":
             self = .typeClaudeSonnet46(try ClaudeSonnet46(from: decoder))
+        case "Flux2DevI2I":
+            self = .typeFlux2DevI2I(try Flux2DevI2I(from: decoder))
         case "Flux2KleinI2I":
             self = .typeFlux2KleinI2I(try Flux2KleinI2I(from: decoder))
         case "Flux2Pro":
