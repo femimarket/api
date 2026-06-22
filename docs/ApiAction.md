@@ -10,7 +10,8 @@ Name | Type | Description | Notes
 **prompt** | **String** |  | 
 **audio** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
 **comfyRequestId** | **String** |  | 
-**image** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
+**image** | **String** | input subject image as base64 — data URI (web) or raw base64 (android/ios); type detected server-side | 
+**image2** | **String** | reference image as base64 — data URI (web) or raw base64 (android/ios); type detected server-side | 
 **messages** | [ApiChatMessage] |  | 
 **amountCents** | **Int64** |  | 
 **credit** | **Int64** |  | 
