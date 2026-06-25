@@ -8,19 +8,15 @@ Name | Type | Description | Notes
 **falRequestId** | **String** |  | 
 **file** | **String** | base64 return | 
 **prompt** | **String** |  | 
-**audio** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
+**audio** | **String** | input audio as base64 — a real container (mp3/m4a/wav); data URI (web) or raw base64 (android/ios) | 
 **comfyRequestId** | **String** |  | 
 **image** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios); type detected server-side | 
 **image2** | **String** | reference image as base64 — data URI (web) or raw base64 (android/ios); type detected server-side | 
 **messages** | [ApiChatMessage] |  | 
-**amountCents** | **Int64** |  | 
 **credit** | **Int64** |  | 
-**loaded** | **Bool** |  | 
-**paymentUrl** | **String** |  | 
-**stripePaymentIntentId** | **String** |  | 
-**stripeSessionId** | **String** |  | 
 **currency** | **String** |  | 
 **jws** | **String** |  | 
+**loaded** | **Bool** |  | 
 **price** | **Int64** |  | 
 **productId** | **String** |  | 
 **transactionId** | **String** |  | 
@@ -28,7 +24,7 @@ Name | Type | Description | Notes
 **packageName** | **String** |  | 
 **purchaseToken** | **String** |  | 
 **characters** | [CharacterAlignment] | return | 
-**lyrics** | **String** |  | 
+**lyrics** | **String** | transcribed lyrics (return) | 
 **words** | [WordAlignment] | return | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

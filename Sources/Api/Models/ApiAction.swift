@@ -16,9 +16,10 @@ public enum ApiAction: Sendable, Codable, Hashable {
     case typeFlux2Pro(Flux2Pro)
     case typeGooglePay(GooglePay)
     case typeLtx23A2V(Ltx23A2V)
-    case typeLyricSync(LyricSync)
     case typeNanoBanana2(NanoBanana2)
-    case typeStripe(Stripe)
+    case typeQwen3635bA3b(Qwen3635bA3b)
+    case typeQwen3AsrFlash(Qwen3AsrFlash)
+    case typeQwen3ForcedAligner06B(Qwen3ForcedAligner06B)
     case typeZImageTurbo(ZImageTurbo)
 
     public func encode(to encoder: Encoder) throws {
@@ -40,11 +41,13 @@ public enum ApiAction: Sendable, Codable, Hashable {
             try container.encode(value)
         case .typeLtx23A2V(let value):
             try container.encode(value)
-        case .typeLyricSync(let value):
-            try container.encode(value)
         case .typeNanoBanana2(let value):
             try container.encode(value)
-        case .typeStripe(let value):
+        case .typeQwen3635bA3b(let value):
+            try container.encode(value)
+        case .typeQwen3AsrFlash(let value):
+            try container.encode(value)
+        case .typeQwen3ForcedAligner06B(let value):
             try container.encode(value)
         case .typeZImageTurbo(let value):
             try container.encode(value)
@@ -76,12 +79,14 @@ public enum ApiAction: Sendable, Codable, Hashable {
             self = .typeGooglePay(try GooglePay(from: decoder))
         case "Ltx2_3A2V":
             self = .typeLtx23A2V(try Ltx23A2V(from: decoder))
-        case "LyricSync":
-            self = .typeLyricSync(try LyricSync(from: decoder))
         case "NanoBanana2":
             self = .typeNanoBanana2(try NanoBanana2(from: decoder))
-        case "Stripe":
-            self = .typeStripe(try Stripe(from: decoder))
+        case "Qwen3AsrFlash":
+            self = .typeQwen3AsrFlash(try Qwen3AsrFlash(from: decoder))
+        case "Qwen3ForcedAligner0_6B":
+            self = .typeQwen3ForcedAligner06B(try Qwen3ForcedAligner06B(from: decoder))
+        case "Qwen3_6_35bA3b":
+            self = .typeQwen3635bA3b(try Qwen3635bA3b(from: decoder))
         case "ZImageTurbo":
             self = .typeZImageTurbo(try ZImageTurbo(from: decoder))
         default:

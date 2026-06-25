@@ -1,11 +1,11 @@
-# LyricSync
+# Qwen3ForcedAligner06B
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**audio** | **String** | input image as base64 — data URI (web) or raw base64 (android/ios), empty if unused; type detected server-side | 
+**audio** | **String** | input audio as base64 of raw 16 kHz mono f32 LE PCM (client-decoded; no container) | 
 **characters** | [CharacterAlignment] | return | 
-**lyrics** | **String** |  | 
+**lyrics** | **String** | lyrics to align to the audio — supply them, or get them from TranscribeSong first | 
 **type** | **String** |  | 
 **words** | [WordAlignment] | return | 
 

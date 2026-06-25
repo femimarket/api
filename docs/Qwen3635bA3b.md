@@ -1,11 +1,10 @@
-# ApiKey
+# Qwen3635bA3b
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **UUID** |  | 
-**key** | **String** |  | [optional] 
-**userId** | **String** |  | 
+**messages** | [ApiChatMessage] |  | 
+**type** | **String** |  | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

@@ -22,12 +22,11 @@ Run `pod install`
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *https://api.earnfemi.com*
+All URIs are relative to *https://femi.market*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *ApiHandlerAPI* | [**apiHandler**](docs/ApiHandlerAPI.md#apihandler) | **POST** /api | 
-*ApiKeyRouteAPI* | [**apiKey**](docs/ApiKeyRouteAPI.md#apikey) | **POST** /api_key | 
 
 
 ## Documentation For Models
@@ -36,7 +35,6 @@ Class | Method | HTTP request | Description
  - [ApiAction](docs/ApiAction.md)
  - [ApiChatMessage](docs/ApiChatMessage.md)
  - [ApiChatRole](docs/ApiChatRole.md)
- - [ApiKey](docs/ApiKey.md)
  - [ApiStatus](docs/ApiStatus.md)
  - [ApplePay](docs/ApplePay.md)
  - [CharacterAlignment](docs/CharacterAlignment.md)
@@ -47,9 +45,10 @@ Class | Method | HTTP request | Description
  - [Flux2Pro](docs/Flux2Pro.md)
  - [GooglePay](docs/GooglePay.md)
  - [Ltx23A2V](docs/Ltx23A2V.md)
- - [LyricSync](docs/LyricSync.md)
  - [NanoBanana2](docs/NanoBanana2.md)
- - [Stripe](docs/Stripe.md)
+ - [Qwen3635bA3b](docs/Qwen3635bA3b.md)
+ - [Qwen3AsrFlash](docs/Qwen3AsrFlash.md)
+ - [Qwen3ForcedAligner06B](docs/Qwen3ForcedAligner06B.md)
  - [WordAlignment](docs/WordAlignment.md)
  - [ZImageTurbo](docs/ZImageTurbo.md)
 

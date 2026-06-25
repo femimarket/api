@@ -1,6 +1,6 @@
 # ApiHandlerAPI
 
-All URIs are relative to *https://api.earnfemi.com*
+All URIs are relative to *https://femi.market*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -19,7 +19,7 @@ Method | HTTP request | Description
 // The following code samples are still beta. For any issue, please report via http://github.com/OpenAPITools/openapi-generator/issues/new
 import Api
 
-let API = API(action: ApiAction(description: "description_example", type: "type_example", falRequestId: "falRequestId_example", file: "file_example", prompt: "prompt_example", audio: "audio_example", comfyRequestId: "comfyRequestId_example", image: "image_example", image2: "image2_example", messages: [ApiChatMessage(content: "content_example", role: ApiChatRole())], amountCents: 123, credit: 123, loaded: false, paymentUrl: "paymentUrl_example", stripePaymentIntentId: "stripePaymentIntentId_example", stripeSessionId: "stripeSessionId_example", currency: "currency_example", jws: "jws_example", price: 123, productId: "productId_example", transactionId: "transactionId_example", orderId: "orderId_example", packageName: "packageName_example", purchaseToken: "purchaseToken_example", characters: [CharacterAlignment(end: 123, start: 123, text: "text_example")], lyrics: "lyrics_example", words: [WordAlignment(end: 123, loss: 123, start: 123, text: "text_example")]), credit: 123, id: 123, status: ApiStatus(), userId: "userId_example") // API | 
+let API = API(action: ApiAction(description: "description_example", type: "type_example", falRequestId: "falRequestId_example", file: "file_example", prompt: "prompt_example", audio: "audio_example", comfyRequestId: "comfyRequestId_example", image: "image_example", image2: "image2_example", messages: [ApiChatMessage(content: "content_example", role: ApiChatRole())], credit: 123, currency: "currency_example", jws: "jws_example", loaded: false, price: 123, productId: "productId_example", transactionId: "transactionId_example", orderId: "orderId_example", packageName: "packageName_example", purchaseToken: "purchaseToken_example", characters: [CharacterAlignment(end: 123, start: 123, text: "text_example")], lyrics: "lyrics_example", words: [WordAlignment(end: 123, loss: 123, start: 123, text: "text_example")]), credit: 123, id: 123, status: ApiStatus(), userId: "userId_example") // API | 
 
 ApiHandlerAPI.apiHandler(API: API) { (response, error) in
     guard error == nil else {

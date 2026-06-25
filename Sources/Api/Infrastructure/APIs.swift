@@ -74,7 +74,7 @@ open class ApiAPIConfiguration: @unchecked Sendable {
     // MARK: - Init
 
     public init(
-        basePath: String = "https://api.earnfemi.com",
+        basePath: String = "https://femi.market",
         customHeaders: [String: String] = [:],
         credential: URLCredential? = nil,
         requestBuilderFactory: RequestBuilderFactory = URLSessionRequestBuilderFactory(),
