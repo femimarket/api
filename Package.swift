@@ -1,32 +1,26 @@
-// swift-tools-version:6.0
+// swift-tools-version: 6.3
+// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
-    name: "Api",
-    platforms: [
-        .iOS(.v13),
-        .macOS(.v10_15),
-        .tvOS(.v13),
-        .watchOS(.v6),
-    ],
+    name: "Api2",
     products: [
-        // Products define the executables and libraries produced by a package, and make them visible to other packages.
+        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "Api",
-            targets: ["Api"]
+            name: "Api2",
+            targets: ["Api2"]
         ),
     ],
-    dependencies: [
-        // Dependencies declare other packages that this package depends on.
-    ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
+        // Targets are the basic building blocks of a package, defining a module or a test suite.
+        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Api",
-            dependencies: [],
-            path: "Sources/Api"
+            name: "Api2"
+        ),
+        .testTarget(
+            name: "Api2Tests",
+            dependencies: ["Api2"]
         ),
     ],
     swiftLanguageModes: [.v6]
