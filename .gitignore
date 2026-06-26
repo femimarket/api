@@ -6,3 +6,10 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+
+# Rust build artifacts
+Rust/target/
+Rust/Cargo.lock
+
+# Built xcframework (regenerate via ./build-rust.sh)
+RustFFI.xcframework/

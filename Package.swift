@@ -4,23 +4,29 @@
 import PackageDescription
 
 let package = Package(
-    name: "Api2",
+    name: "Api",
+    platforms: [
+        .iOS(.v15),
+        .macOS(.v12),
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "Api2",
-            targets: ["Api2"]
+            name: "Api",
+            targets: ["Api"]
         ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        .binaryTarget(
+            name: "RustFFI",
+            path: "RustFFI.xcframework"
+        ),
         .target(
-            name: "Api2"
+            name: "Api",
+            dependencies: ["RustFFI"]
         ),
         .testTarget(
-            name: "Api2Tests",
-            dependencies: ["Api2"]
+            name: "ApiTests",
+            dependencies: ["Api"]
         ),
     ],
     swiftLanguageModes: [.v6]
