@@ -1,125 +1,196 @@
 # Api
 
-A Swift package that provides a high-level API for interacting with the **femi.market** image generation service (`ZImageTurbo` model). It wraps a Rust FFI crate to handle HTTP requests, cancellation, and memory management efficiently across iOS and macOS platforms.
+A Swift Package that provides a unified, type-safe interface to the **femi.market** AI API. It wraps Rust-based FFI bindings to handle asynchronous HTTP requests, cancellation, and error handling, exposing simple Swift async/await methods for image generation, video synthesis, and LLM interactions.
 
 ## Overview
 
-This project bridges Swift and Rust to provide a performant, cancellation-safe interface for AI image generation.
+This project bridges a Swift frontend with a Rust backend via C-FFI. The Rust layer handles the heavy lifting of network I/O against `https://femi.market/api`, while the Swift layer provides a clean, modern API for iOS and macOS applications.
 
-- **Rust Layer**: Handles the heavy lifting of HTTP communication using `reqwest` and `tokio`. It manages a shared runtime and client, supports cancellation via atomic flags, and returns heap-allocated memory to Swift.
-- **Swift Layer**: Provides a clean, async/await-native API (`Api.zImageTurbo`) that hides the complexity of FFI calls, memory allocation, and cancellation handling.
-- **Platform Support**: iOS 15+ and macOS 12+.
+### Key Features
+- **Unified Interface**: Single entry point (`Api`) for all AI models.
+- **Cancellation Support**: Native Swift `Task` cancellation propagates to the Rust FFI layer to abort in-flight requests.
+- **Automatic Fallbacks**: Returns specific fallback assets (images/videos) or messages for common error states like missing credentials or unpaid accounts (HTTP 402).
+- **Cross-Platform**: Supports iOS 15+ and macOS 12+ via a pre-built `xcframework`.
 
 ## Architecture
 
-The project consists of three main components:
+The project consists of three main layers:
 
-1.  **`Rust/`**: Contains the Rust source code (`src/lib.rs`) and headers (`include/RustFFI.h`). This crate is compiled into static libraries for various Apple architectures.
-2.  **`RustFFI.xcframework`**: A pre-built (or build-time generated) XCFramework containing the compiled Rust libraries for iOS (device/simulator) and macOS (universal). This is consumed by Swift Package Manager.
-3.  **`Sources/Api/`**: The Swift package source code that imports `RustFFI` and exposes the `Api` struct.
+1.  **Swift API (`Sources/Api/`)**: High-level Swift functions that convert inputs (e.g., `Data`, `String`) into C-compatible types, invoke the Rust FFI, and parse the JSON response to return native Swift types.
+2.  **Rust FFI (`Rust/src/`)**: Low-level Rust code that performs the actual HTTP POST requests using `reqwest` and `tokio`. It manages memory allocation for response bodies, ensuring the caller (Swift) can safely read and free the data.
+3.  **Build System (`build-rust.sh` & `Package.swift`)**: Automates the compilation of Rust targets for iOS (device/simulator) and macOS, packaging them into `RustFFI.xcframework`.
 
-### Key Files
+### File Structure
 
--   `Package.swift`: Defines the Swift package, dependencies, and platform constraints.
--   `build-rust.sh`: A bash script to compile the Rust FFI crate for all required targets and package it into `RustFFI.xcframework`.
--   `Rust/src/lib.rs`: The Rust implementation of the FFI boundary.
--   `Sources/Api/Api.swift`: The Swift wrapper providing the public API.
+```text
+.
+├── Package.swift              # Swift Package Manifest
+├── build-rust.sh              # Script to build Rust FFI and generate xcframework
+├── RustFFI.xcframework        # Pre-built binary framework (generated)
+├── Sources/
+│   └── Api/
+│       ├── Api.swift          # Static resource constants (fallback images/videos)
+│       ├── Flux2Pro.swift     # Image generation wrapper
+│       ├── Flux2DevI2I.swift  # Image-to-Image wrapper
+│       ├── Flux2KleinI2I.swift# Image-to-Image with reference wrapper
+│       ├── NanoBanana2.swift  # Image generation wrapper
+│       ├── ZImageTurbo.swift  # Image generation wrapper
+│       ├── Ltx2_3A2V.swift    # Video generation wrapper
+│       ├── Qwen3AsrFlash.swift# Audio transcription wrapper
+│       └── Qwen3_6_35b_a3b.swift # LLM Chat wrapper
+├── Tests/
+│   └── ApiTests/              # Unit and integration tests
+└── Rust/
+    ├── include/
+    │   └── RustFFI.h          # C header for FFI bindings
+    └── src/
+        ├── lib.rs             # Rust entry point, runtime setup
+        ├── flux2_pro.rs       # FFI implementation for Flux2Pro
+        ├── flux2_dev_i2i.rs   # FFI implementation for Flux2DevI2I
+        └── ...                # Other FFI implementations
+```
 
 ## Installation
 
-### Prerequisites
+Add the package to your Xcode project or `Package.swift` file.
 
--   **Swift 6.3+**: Ensure you are using a Swift toolchain that supports Swift 6 language modes.
--   **Rust Toolchain**: `rustup` and `cargo` must be installed and available in your `PATH`.
--   **Xcode Command Line Tools**: Required for `xcodebuild` and `lipo`.
+### Swift Package Manager
 
-### Building the Rust FFI
+```swift
+dependencies: [
+    .package(url: "https://github.com/your-org/api.git", from: "1.0.0")
+]
+```
 
-Before using the package in a Swift project, you must build the `RustFFI.xcframework`. Run the following script from the project root:
+### Requirements
+- **Swift**: 6.0+
+- **iOS**: 15.0+
+- **macOS**: 12.0+
+- **Rust**: Required only if you intend to rebuild the FFI layer (see Building).
+
+## Usage
+
+Import the package and call the static methods on `Api`. All methods are `async` and support cancellation.
+
+### Image Generation
+
+```swift
+let image = await Api.flux2Pro(
+    user: "my_username",
+    password: "my_password",
+    prompt: "A futuristic cityscape at sunset"
+)
+// Returns Data (JPEG/PNG) or fallback image on error
+```
+
+### Image-to-Image
+
+```swift
+let inputImage = ... // Data
+let referenceImage = ... // Data
+
+let result = await Api.flux2KleinI2I(
+    user: "my_username",
+    password: "my_password",
+    image: inputImage,
+    image2: referenceImage,
+    prompt: "Change the style to cyberpunk"
+)
+```
+
+### Video Generation
+
+```swift
+let video = await Api.ltx2_3a2v(
+    user: "my_username",
+    password: "my_password",
+    image: imageData,
+    audio: audioData,
+    prompt: "The character waves hello"
+)
+// Returns MP4 Data or fallback video on error
+```
+
+### LLM Chat
+
+```swift
+var messages: [(role: String, content: String)] = [
+    (role: "User", content: "Hello")
+]
+
+messages = await Api.qwen3_6_35b_a3b(
+    user: "my_username",
+    password: "my_password",
+    messages: messages
+)
+// Returns updated messages array with the assistant's reply appended
+```
+
+### Cancellation
+
+You can cancel any request by cancelling the parent `Task`. The Swift layer will signal the Rust FFI to abort the HTTP request.
+
+```swift
+let task = Task {
+    await Api.flux2Pro(user: "...", password: "...", prompt: "...")
+}
+
+// Cancel after 2 seconds
+try await Task.sleep(nanoseconds: 2_000_000_000)
+task.cancel()
+
+// The task will resolve quickly with a fallback response
+let result = await task.value
+```
+
+## Building the FFI
+
+If you need to rebuild the Rust bindings (e.g., after modifying `Rust/src/`), run the provided shell script from the repository root.
 
 ```bash
 chmod +x build-rust.sh
 ./build-rust.sh
 ```
 
-This script will:
-1.  Add necessary Rust targets (`aarch64-apple-ios`, `aarch64-apple-ios-sim`, `x86_64-apple-ios`, `aarch64-apple-darwin`, `x86_64-apple-darwin`).
-2.  Compile the Rust crate for each target.
-3.  Create universal binaries for iOS simulator and macOS using `lipo`.
-4.  Package everything into `RustFFI.xcframework`.
+This script:
+1. Installs necessary Rust targets (iOS device/simulator, macOS).
+2. Compiles the Rust crate in release mode for all targets.
+3. Creates universal binaries for iOS simulator and macOS using `lipo`.
+4. Packages everything into `RustFFI.xcframework`.
 
-## Usage
+**Prerequisites**:
+- `rustup` and `cargo` installed.
+- `xcodebuild` available.
 
-Add the package to your Swift project via Swift Package Manager. Then, use the `Api` struct to generate images.
+## Error Handling & Fallbacks
 
-### Basic Example
+The API is designed to be resilient. Instead of throwing errors, it returns fallback assets or messages based on the HTTP status code returned by the server.
 
-```swift
-import Api
+| Status | Behavior |
+| :--- | :--- |
+| **200** | Returns the generated content (Image, Video, Text). |
+| **402** | Returns a "Top Up" image/video or message (e.g., `"Top up to transcribe lyrics"`). |
+| **Other / Network Error** | Returns a generic "Fallback" image/video or message (e.g., `"Could not respond"`). |
 
-// Generate an image
-let (status, body) = await Api.zImageTurbo(
-    token: "your-api-token",
-    prompt: "a red apple on a wooden table"
-)
+### Fallback Assets
 
-if status == 200 {
-    print("Success! Received \(body.count) bytes of data.")
-    // Process body (e.g., decode JSON or save image)
-} else {
-    print("Failed with status: \(status)")
-}
-```
+The `Api` struct exposes static `Data` constants for these fallbacks, which can be used in UI components:
 
-### Cancellation
-
-The API supports cancellation. If the calling task is cancelled, the underlying HTTP request is aborted.
-
-```swift
-let task = Task {
-    await Api.zImageTurbo(
-        token: "your-api-token",
-        prompt: "a complex scene..."
-    )
-}
-
-// Cancel after 100ms
-try await Task.sleep(nanoseconds: 100_000_000)
-task.cancel()
-
-let (status, _) = await task.value
-// status will be 0 if cancelled
-```
-
-## API Reference
-
-### `Api.zImageTurbo(token:prompt:)`
-
-Sends a request to the `ZImageTurbo` model on femi.market.
-
--   **Parameters**:
-    -   `token`: The Bearer token for authentication. If empty or missing, the server may return a 401 error.
-    -   `prompt`: The text prompt for image generation.
--   **Returns**: A tuple `(status: UInt16, body: Data)`.
-    -   `status`: The HTTP status code (e.g., 200, 401, 402). Returns `0` if the request was cancelled or failed at the transport level.
-    -   `body`: The response body as `Data`. Empty if the request failed or was cancelled.
+- `Api.fallbackImage`: Generic error image.
+- `Api.topupImage`: Payment required image.
+- `Api.fallbackVideo`: Generic error video.
+- `Api.topupVideo`: Payment required video.
 
 ## Testing
 
-Run the tests using Swift Package Manager:
+Tests are located in `Tests/ApiTests/`. They require valid credentials to run against the live API.
 
 ```bash
-swift test
+API_USER="your_username" API_PASSWORD="your_password" swift test
 ```
 
-The test suite (`Tests/ApiTests/ApiTests.swift`) includes:
--   Successful requests with various prompts (empty, unicode).
--   Error handling for unfunded accounts (402) and missing tokens (401).
--   Cancellation behavior verification.
-
-## Non-Obvious Conventions
-
--   **Memory Management**: The Rust function `rust_ffi_z_image_turbo` returns a pointer to heap-allocated memory. The Swift wrapper automatically handles deallocation using `.free` when creating the `Data` object. Do not manually free the pointer returned by the FFI function.
--   **Cancellation Mechanism**: Cancellation is implemented via a shared atomic flag. The Swift side sets this flag when the task is cancelled, and the Rust side polls it every 10ms. This is a lightweight, cross-platform approach that avoids complex FFI callbacks.
--   **Runtime Initialization**: The Rust side uses `OnceLock` to initialize the Tokio runtime and `reqwest::Client` only once. This ensures efficient resource usage across multiple calls.
--   **Error Handling**: Transport errors (e.g., network failure) result in a status code of `0`. HTTP errors (e.g., 4xx, 5xx) return the actual HTTP status code.
+### Test Coverage
+- **Unfunded User**: Verifies that invalid/unpaid credentials return the correct "Top Up" fallback.
+- **Missing Credentials**: Verifies that empty credentials return the generic "Fallback" asset.
+- **Cancellation**: Verifies that cancelling a task results in a quick resolution with a fallback response.
+- **Funded User**: Verifies that valid credentials return actual generated content.
