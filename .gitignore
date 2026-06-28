@@ -11,5 +11,3 @@ DerivedData/
 Rust/target/
 Rust/Cargo.lock
 
-# Built xcframework (regenerate via ./build-rust.sh)
-RustFFI.xcframework/
