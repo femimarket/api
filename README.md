@@ -1,115 +1,122 @@
 # Api
 
-## Overview
-`Api` is a Swift Package that provides a unified, async-native interface to a suite of AI models (image generation, video generation, large language models, and speech-to-text) hosted on `femi.market`. It bridges Swift to Rust via FFI, leveraging a pre-compiled `RustFFI.xcframework` for iOS and macOS. The package handles authentication, network requests, cancellation, JSON parsing, and graceful fallbacks, allowing developers to integrate remote AI capabilities with minimal boilerplate.
-
-## Features
-- **Cross-platform support**: iOS 15+ and macOS 12+
-- **Swift Concurrency native**: Fully async/await with `Task` cancellation support
-- **Rust-backed FFI**: High-performance, memory-safe network layer compiled to native binaries
-- **Automatic fallbacks**: Returns curated fallback assets for network errors, non-200 responses, or HTTP 402 (insufficient credits)
-- **Swift 6 compatible**: Uses strict concurrency checking and modern Swift language modes
-- **Zero-dependency Swift layer**: Only depends on the bundled `RustFFI.xcframework` and Foundation
+`Api` is a Swift Package that provides a unified, async-first interface to a suite of AI models (image generation, image-to-image, video generation, speech-to-text, and LLM chat) via a Rust FFI layer. The Rust layer handles HTTP communication with `femi.market`, manages a shared Tokio runtime, and exposes a stable C ABI. The Swift layer wraps these FFI calls, handles structured cancellation, parses JSON responses, and returns user-friendly fallback assets on failure or payment errors.
 
 ## Architecture & Key Files
+
+The project is split into a Rust FFI crate and a Swift wrapper package:
+
 | Path | Purpose |
 |------|---------|
-| `Package.swift` | SPM manifest. Defines the `Api` library, links `RustFFI.xcframework`, and bundles fallback resources. |
-| `RustFFI.xcframework/` | Pre-built universal framework containing Rust FFI bindings for iOS (arm64 + simulator) and macOS (arm64 + x86_64). |
-| `Rust/src/lib.rs` | Rust entry point. Lazily initializes a shared `tokio` runtime (2 workers) and `reqwest` HTTP client. |
-| `Rust/src/*.rs` | Individual FFI implementations for each model. POST to `https://femi.market/api`, handle cancellation flags, and return heap-allocated response bytes. |
-| `Rust/include/RustFFI/RustFFI.h` | C header declaring the FFI function signatures consumed by Swift. |
-| `build-rust.sh` | Build script that compiles the Rust crate for all target platforms, creates universal binaries, and regenerates `RustFFI.xcframework`. |
-| `Sources/Api/*.swift` | Swift wrappers that call the FFI, manage cancellation flags, parse JSON responses, and return typed Swift values. |
-| `Tests/ApiTests/*.swift` | Swift 6 `Testing` framework tests covering fallback behavior, cancellation, and funded-user responses. |
+| `Package.swift` | Swift Package manifest. Defines the `Api` target, links against `RustFFI.xcframework`, bundles fallback resources, and enforces Swift 6 language mode. |
+| `build-rust.sh` | Build script that compiles the Rust crate for iOS (device + simulator) and macOS, creates universal binaries via `lipo`, and packages everything into `RustFFI.xcframework`. |
+| `Rust/src/lib.rs` | Rust entry point. Initializes a shared `tokio::Runtime` and `reqwest::Client` via `OnceLock` to avoid per-call overhead. Delegates to model-specific modules. |
+| `Rust/include/RustFFI/RustFFI.h` | C header exposing all FFI functions. All functions share an identical signature pattern. |
+| `Rust/src/*.rs` | Rust implementations for each model endpoint. Each POSTs to `https://femi.market/api`, handles cancellation polling, and returns heap-allocated response bytes. |
+| `RustFFI.xcframework/` | Pre-built (or script-generated) framework containing compiled libraries and headers for iOS and macOS. |
+| `Sources/Api/Api.swift` | Enum holding fallback resources (`fallback.png`, `topup.jpg`, `could-not-generate.mp4`, `topup-video.mp4`). |
+| `Sources/Api/*.swift` | Swift async wrappers. Each model has a dedicated file (e.g., `Flux2Pro.swift`, `Qwen3_6_35b_a3b.swift`). Handles C interop, cancellation, and response parsing. |
+| `Tests/ApiTests/*.swift` | Swift Testing framework suite. Validates unfunded/missing credential fallbacks, cancellation behavior, and funded-user success paths. |
 
-## Requirements
-- Swift 6.0+ (tools version 6.3)
-- iOS 15+ / macOS 12+
-- Rust toolchain (`rustup`, `cargo`)
-- `xcodebuild` (required only if rebuilding the FFI)
+## Prerequisites
 
-## Installation & Build
-Add the package to your project via Swift Package Manager. The `RustFFI.xcframework` is included in the repository and will be automatically linked.
+- macOS (required for building the xcframework and running tests)
+- Rust toolchain (`cargo`, `rustup`)
+- Swift 6.3+ toolchain
+- `xcodebuild` (bundled with Xcode, required for xcframework creation)
 
-To rebuild the Rust FFI from source:
-```bash
-chmod +x build-rust.sh
-./build-rust.sh
-```
-The script installs the required `rustup` targets, compiles in `--release` mode, merges iOS simulator architectures into a universal binary, and regenerates `RustFFI.xcframework` in the repository root.
+## Building & Packaging
+
+1. Ensure the build script is executable:
+   ```bash
+   chmod +x build-rust.sh
+   ```
+2. Run the build script from the repository root:
+   ```bash
+   ./build-rust.sh
+   ```
+   This will:
+   - Add required `rustup` targets (`aarch64-apple-ios`, `aarch64-apple-ios-sim`, `x86_64-apple-ios`, `aarch64-apple-darwin`, `x86_64-apple-darwin`)
+   - Compile `librust_ffi.a` for each target in `--release` mode
+   - Create universal iOS simulator and macOS binaries using `lipo`
+   - Generate `RustFFI.xcframework` in the repository root
+
+The Swift package automatically consumes the framework. No additional configuration is needed.
 
 ## Usage
-All endpoints are exposed as static async methods on the `Api` type. They accept credentials, model-specific inputs, and return typed results.
 
+Import the package in your Swift code. All public methods are `async` and return `Data` or `String`. They require HTTP Basic Auth credentials (`user` and `password`).
+
+### Image Generation
 ```swift
-import Api
-
-// Text-to-Image
-let image = await Api.flux2Pro(user: "myuser", password: "mypass", prompt: "a cyberpunk city at dusk")
-
-// Image-to-Image
-let edited = await Api.flux2DevI2I(
-    user: "myuser", password: "mypass",
-    image: originalImageData, prompt: "add neon signs"
-)
-
-// Text-to-Video
-let video = await Api.ltx2_3a2v(
-    user: "myuser", password: "mypass",
-    image: referenceImage, audio: backgroundMusic, prompt: "slow pan forward"
-)
-
-// LLM Chat
-let messages = [(role: .user, content: "Explain quantum computing in one sentence")]
-let response = await Api.qwen3_6_35b_a3b(user: "myuser", password: "mypass", messages: messages)
-
-// Speech-to-Text
-let lyrics = await Api.qwen3AsrFlash(user: "myuser", password: "mypass", audio: songData)
+let img = await Api.flux2Pro(user: "your_user", password: "your_pass", prompt: "a red apple on a wooden table")
 ```
 
-### Cancellation
-Swift `Task` cancellation is fully supported. Cancel the task and the FFI layer will abort the in-flight request within ~10ms:
+### Image-to-Image
 ```swift
-let task = Task { await Api.flux2Pro(user: "u", password: "p", prompt: "long generation...") }
-// ...
-task.cancel() // Rust FFI detects flag and returns early
-let result = await task.value
+let img = await Api.flux2DevI2I(user: "...", password: "...", image: inputData, prompt: "...")
+let img = await Api.flux2KleinI2I(user: "...", password: "...", image: img1, image2: img2, prompt: "...")
 ```
 
-## API Reference
-| Function | Input | Output | Description |
-|----------|-------|--------|-------------|
-| `Api.zImageTurbo(user:password:prompt:)` | `String, String, String` | `Data` | Text-to-image generation |
-| `Api.nanoBanana2(user:password:prompt:)` | `String, String, String` | `Data` | Text-to-image generation |
-| `Api.flux2Pro(user:password:prompt:)` | `String, String, String` | `Data` | Text-to-image generation |
-| `Api.flux2DevI2I(user:password:image:prompt:)` | `String, String, Data, String` | `Data` | Single-image input-to-image |
-| `Api.flux2KleinI2I(user:password:image:image2:prompt:)` | `String, String, Data, Data, String` | `Data` | Dual-image input-to-image |
-| `Api.ltx2_3a2v(user:password:image:audio:prompt:)` | `String, String, Data, Data, String` | `Data` | Image+audio-to-video |
-| `Api.qwen3_6_35b_a3b(user:password:messages:)` | `String, String, [(Role, String)]` | `[(Role, String)]` | LLM chat with conversation history |
-| `Api.qwen3AsrFlash(user:password:audio:)` | `String, String, Data` | `String` | Audio transcription / lyric extraction |
+### Video Generation
+```swift
+let video = await Api.ltx2_3a2v(user: "...", password: "...", image: imgData, audio: audioData, prompt: "...")
+```
+
+### Speech-to-Text (Lyrics)
+```swift
+let lyrics = await Api.qwen3AsrFlash(user: "...", password: "...", audio: audioData)
+```
+
+### LLM Chat
+```swift
+let messages = await Api.qwen3_6_35b_a3b(
+    user: "...", 
+    password: "...", 
+    messages: [(role: .user, content: "say hi in one word")]
+)
+// Returns the original messages + the assistant's reply
+```
+
+## Cancellation & Error Handling
+
+### Task Cancellation
+Each Swift wrapper uses `withTaskCancellationHandler` to allocate a cancellation flag pointer. When the Swift `Task` is cancelled, the flag is set to `1`. The Rust side polls this flag via `AtomicU8` every 10ms and aborts the HTTP request if triggered, returning a status of `0` and an empty body. Swift then returns the appropriate fallback asset.
+
+### Error & Fallback Behavior
+- **Network/Transport Failures**: Returns `Api.fallbackImage` / `Api.fallbackVideo` (or `"Could not process lyrics"` / `"Could not respond"` for text endpoints).
+- **HTTP 402 (Payment Required)**: Returns `Api.topupImage` / `Api.topupVideo` (or `"Top up to transcribe lyrics"` for ASR).
+- **HTTP 200 with valid payload**: Parses the JSON response, extracts the base64-encoded file/lyrics/messages from the `action` object, and returns the decoded data.
+- **Memory Management**: Rust returns heap-allocated bytes. Swift safely transfers ownership using `Data(bytesNoCopy:count:deallocator: .free)`, avoiding unnecessary copies and ensuring proper deallocation.
 
 ## Testing
-Run the test suite with:
+
+Tests use the Swift Testing framework and require live credentials to verify funded-user behavior.
+
+Run tests from the repository root:
 ```bash
 API_USER="your_username" API_PASSWORD="your_password" swift test
 ```
-Tests require valid credentials to hit the live `femi.market` endpoints. The suite verifies:
-- Fallback assets are returned for unfunded/missing credentials
-- Cancellation resolves in <1s and returns fallback content
-- Funded users receive valid generated media or responses
-- Edge cases (empty inputs, unicode prompts, empty audio)
 
-## Cancellation & Error Handling
-- **Cancellation**: Swift's `withTaskCancellationHandler` sets a shared `UInt8` flag. The Rust FFI polls this flag every 10ms via `AtomicU8::load`. If non-zero, the request aborts and returns status `0`.
-- **Error Fallbacks**: 
-  - HTTP 402 → Returns `Api.topupImage` or `Api.topupVideo`
-  - Network failures, timeouts, or non-200 responses → Returns `Api.fallbackImage` or `Api.fallbackVideo`
-  - LLM/ASR failures → Returns `"Could not respond"` or `"Could not process lyrics"`
-- **Memory Management**: Rust allocates response bytes on the heap and returns a raw pointer. Swift wraps it in `Data(bytesNoCopy:count:deallocator: .free)` to ensure automatic deallocation when the `Data` instance goes out of scope.
+Test coverage includes:
+- Unfunded/missing credentials returning correct fallbacks across all endpoints
+- Task cancellation resolving in <1s and returning fallbacks
+- Funded users returning actual generated content (images, videos, lyrics, chat replies)
+- Edge cases: empty prompts, empty audio, unicode prompts, empty message arrays
 
-## Conventions & Notes
-- A single `tokio` runtime and `reqwest` client are lazily initialized in `Rust/src/lib.rs` and shared across all FFI calls.
-- All FFI functions expect credentials via HTTP Basic Auth. The Rust layer constructs the request body with a UUID v7, model type, and status placeholder.
-- The Swift wrappers assume the server returns JSON with an `action` object containing a `file` field (base64-encoded media) or `messages`/`lyrics` fields.
-- Swift 6 strict concurrency is enforced via `swiftLanguageModes: [.v6]` in `Package.swift`. All public APIs are `Sendable`-compatible.
+## Non-Obvious Conventions
+
+- **Uniform FFI Signature**: Every Rust function follows `(user, password, inputs..., cancel_flag, out_status, out_len) -> *mut u8`. This simplifies Swift interop and allows consistent wrapper generation.
+- **Shared Runtime & Client**: `Rust/src/lib.rs` uses `OnceLock` to initialize a single `tokio::Runtime` (2 workers) and `reqwest::Client` (600s timeout). This avoids per-call initialization overhead and connection churn.
+- **Detached Tasks**: Swift wrappers run the FFI call on `Task.detached(priority: .userInitiated)` to prevent main-thread blocking and ensure cancellation propagates correctly.
+- **JSON Payload Structure**: The Rust layer always wraps requests in a standard envelope:
+  ```json
+  {
+    "id": "<uuid>",
+    "user_id": "",
+    "action": { "type": "<ModelType>", ... },
+    "status": "Pending",
+    "credit": 0
+  }
+  ```
+- **Swift 6 Language Mode**: The package explicitly requires `swiftLanguageModes: [.v6]` in `Package.swift` to enforce strict concurrency checking.

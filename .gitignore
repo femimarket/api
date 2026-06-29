@@ -11,3 +11,7 @@ DerivedData/
 Rust/target/
 Rust/Cargo.lock
 
+.build/
+.swiftpm/
+build/
+*.xcuserdatad/
