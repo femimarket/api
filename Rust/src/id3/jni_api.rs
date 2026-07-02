@@ -16,7 +16,7 @@ use crate::id3::sylt::core_extract_sylt;
 /// }
 /// ```
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_market_femi_kotlinapi_Id3Jvm_extractSylt<'l>(
+pub extern "system" fn Java_market_femi_api_Id3Jvm_extractSylt<'l>(
     env: JNIEnv<'l>,
     _class: JClass<'l>,
     bytes: JByteArray<'l>,

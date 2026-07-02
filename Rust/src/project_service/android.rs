@@ -15,7 +15,7 @@ fn jstr(env: &mut JNIEnv, s: JString) -> Option<String> {
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpEmbed<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpEmbed<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>,
     path: JString<'l>, prompt: JString<'l>, model: JString<'l>, subject: JObjectArray<'l>,
 ) -> jint {
@@ -40,7 +40,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpEmbed<'
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadPrompt<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpReadPrompt<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>,
 ) -> jstring {
     let Some(p) = jstr(&mut env, path) else { return std::ptr::null_mut() };
@@ -52,7 +52,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadPro
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadModel<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpReadModel<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>,
 ) -> jstring {
     let Some(p) = jstr(&mut env, path) else { return std::ptr::null_mut() };
@@ -64,7 +64,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadMod
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadSubjectCount<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpReadSubjectCount<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>,
 ) -> jint {
     let Some(p) = jstr(&mut env, path) else { return -1 };
@@ -73,7 +73,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadSub
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadSubjectAt<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpReadSubjectAt<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>, index: jint,
 ) -> jstring {
     let Some(p) = jstr(&mut env, path) else { return std::ptr::null_mut() };
@@ -85,7 +85,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadSub
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpSetRating<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpSetRating<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>, rating: jint,
 ) -> jint {
     let Some(p) = jstr(&mut env, path) else { return -1 };
@@ -96,7 +96,7 @@ pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpSetRati
 }
 
 #[no_mangle]
-pub extern "system" fn Java_market_femi_kotlinapi_ProjectServiceJvm_psxmpReadRating<'l>(
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpReadRating<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>, path: JString<'l>,
 ) -> jint {
     let Some(p) = jstr(&mut env, path) else { return -1 };

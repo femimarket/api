@@ -117,11 +117,11 @@ macro_rules! jni_fn_5 {
     }
 }
 
-jni_fn_3!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiZImageTurbo, rust_ffi_z_image_turbo);
-jni_fn_3!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiQwen3AsrFlash, rust_ffi_qwen3_asr_flash);
-jni_fn_3!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiQwen3635bA3b, rust_ffi_qwen3_6_35b_a3b);
-jni_fn_3!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiNanoBanana2, rust_ffi_nano_banana2);
-jni_fn_3!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiFlux2Pro, rust_ffi_flux2_pro);
-jni_fn_4!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiFlux2DevI2i, rust_ffi_flux2_dev_i2i);
-jni_fn_5!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiFlux2KleinI2i, rust_ffi_flux2_klein_i2i);
-jni_fn_5!(Java_market_femi_kotlinapi_FemiApiJvm_rustFfiLtx23a2v, rust_ffi_ltx2_3a2v);
+jni_fn_3!(Java_market_femi_api_FemiApiJvm_rustFfiZImageTurbo, rust_ffi_z_image_turbo);
+jni_fn_3!(Java_market_femi_api_FemiApiJvm_rustFfiQwen3AsrFlash, rust_ffi_qwen3_asr_flash);
+jni_fn_3!(Java_market_femi_api_FemiApiJvm_rustFfiQwen3635bA3b, rust_ffi_qwen3_6_35b_a3b);
+jni_fn_3!(Java_market_femi_api_FemiApiJvm_rustFfiNanoBanana2, rust_ffi_nano_banana2);
+jni_fn_3!(Java_market_femi_api_FemiApiJvm_rustFfiFlux2Pro, rust_ffi_flux2_pro);
+jni_fn_4!(Java_market_femi_api_FemiApiJvm_rustFfiFlux2DevI2i, rust_ffi_flux2_dev_i2i);
+jni_fn_5!(Java_market_femi_api_FemiApiJvm_rustFfiFlux2KleinI2i, rust_ffi_flux2_klein_i2i);
+jni_fn_5!(Java_market_femi_api_FemiApiJvm_rustFfiLtx23a2v, rust_ffi_ltx2_3a2v);
