@@ -22,18 +22,16 @@ let package = Package(
         ),
         .target(
             name: "Api",
-            dependencies: ["RustFFI"],
-            resources: [
-                .process("Lib/fallback.png"),
-                .process("Lib/topup.jpg"),
-                .process("Lib/topup-video.mp4"),
-                .process("Lib/could-not-generate.mp4"),
-            ]
+            dependencies: ["RustFFI"]
         ),
         .testTarget(
             name: "ApiTests",
             dependencies: ["Api"],
             resources: [
+                .process("Lib/fallback.png"),
+                .process("Lib/topup.jpg"),
+                .process("Lib/topup-video.mp4"),
+                .process("Lib/could-not-generate.mp4"),
                 .process("Qwen3AsrFlash/test_audio.mp3"),
                 .process("Flux2DevI2I/cactus_man.png"),
                 .process("Flux2KleinI2I/pink_tone_chair.png"),

@@ -1,101 +1,136 @@
-# Api (Rust FFI & Swift Wrapper)
+# Femi Rust FFI & Swift API
 
-A cross-platform FFI crate (`rust_ffi`) that exposes AI generation endpoints, XMP metadata manipulation, and ID3 tag parsing to Swift (iOS/macOS), Kotlin (Android), and WebAssembly. The project provides a unified Rust backend with platform-specific bindings and a Swift wrapper (`Api`) that consumes the native library.
+A cross-platform Rust library exposing AI generation endpoints, XMP metadata handling, and ID3 tag parsing via FFI. It provides a unified binary interface for iOS/macOS (via `xcframework`), Android (via JNI), and Web (via WebAssembly).
+
+The project also includes a Swift wrapper (`Api`) that exposes these capabilities to native iOS/macOS applications through a clean, async-first API.
 
 ## Architecture Overview
 
-The project is split into two main layers:
+The codebase is split into two main layers:
 
-1.  **Rust FFI Crate (`Rust/`)**: A `cdylib` compiled for multiple targets. It handles network requests to `https://femi.market/api`, XMP metadata embedding/reading, and ID3 lyric extraction.
-2.  **Swift Package (`Sources/Api/`)**: A Swift wrapper that links against the compiled `RustFFI.xcframework`. It provides idiomatic Swift async APIs, handles memory management of FFI pointers, and manages local file storage via `ProjectService`.
+1.  **Rust Core (`Rust/`)**: The source of truth. Contains the FFI bindings, network clients, and platform-specific backends.
+2.  **Swift Wrapper (`Sources/Api/`)**: A thin layer over the Rust FFI that provides idiomatic Swift async/await interfaces, cancellation support, and file management utilities.
 
-### Supported Platforms & Outputs
+### Platform Targets
+
+The Rust crate (`rust_ffi`) is compiled for three distinct platforms, producing different outputs:
 
 | Platform | Output Path | Consumption Method |
 | :--- | :--- | :--- |
-| **iOS / macOS** | `RustFFI.xcframework` | Swift Package Manager `binaryTarget` |
-| **Android** | `Kmp/kotlinapi/src/androidMain/jniLibs/*` | `System.loadLibrary("rust_ffi")` |
-| **WebAssembly** | `Rust/pkg/` | `npm("rust_ffi", ...)` in `build.gradle.kts` |
+| **Apple** (iOS/macOS) | `RustFFI.xcframework` | Swift Package Manager (`Package.swift`) |
+| **Android** | `Kmp/kotlinapi/src/androidMain/jniLibs/` | `System.loadLibrary("rust_ffi")` |
+| **Web** | `pkg/` | npm package (`rust_ffi`) |
 
 ## Key Files & Directories
 
-*   `build-rust.sh`: The primary build script. Compiles the Rust crate for all supported targets (Apple, Android, WASM) and places outputs in the correct directories.
-*   `Rust/src/lib.rs`: The Rust entry point. Defines shared constants (fallback images/videos), the global `reqwest` client, and the Tokio runtime.
-*   `Rust/src/api/`: Contains the core business logic for AI endpoints (Flux, Qwen, etc.). Each endpoint has a `native` module (C ABI) and a `wasm` module.
-*   `Rust/src/project_service/`: Handles XMP metadata. Uses `xmp_toolkit` on Apple and `xmpkit` (bytes-based) on Android/WASM.
-*   `Rust/src/id3/`: Extracts synchronized lyrics (SYLT) from MP3 files.
-*   `Sources/Api/`: Swift source files. `ProjectService.swift` manages local file I/O and XMP embedding via the FFI. `Flux2Pro.swift`, `ZImageTurbo.swift`, etc., wrap the FFI calls with Swift concurrency.
-*   `Package.swift`: Swift Package Manifest. Defines the `Api` product, links `RustFFI.xcframework`, and includes test resources.
+*   `build-rust.sh`: The master build script. Compiles the Rust crate for all targets and produces the final artifacts.
+*   `Package.swift`: Swift Package Manifest. Defines the `Api` target, links against `RustFFI.xcframework`, and includes test resources.
+*   `Rust/src/lib.rs`: Rust entry point. Defines shared constants, the HTTP client, and fallback assets.
+*   `Rust/src/api/`: Contains implementations for AI endpoints (Flux, Qwen, etc.). Each endpoint has a `native` (C/FFI) and `wasm` module.
+*   `Rust/src/project_service/`: Handles XMP metadata embedding and reading. Uses `xmp_toolkit` on Apple and `xmpkit` (bytes-based) on Android/WASM.
+*   `Rust/src/id3/`: Handles ID3v2 SYLT (synchronized lyrics) extraction.
+*   `Sources/Api/`: Swift source files. Each AI endpoint has a corresponding file (e.g., `Flux2Pro.swift`) that wraps the FFI call.
+*   `Tests/ApiTests/`: Swift unit and integration tests using the Swift Testing framework.
 
-## Build & Installation
+## Installation & Build
 
 ### Prerequisites
 
 *   **Rust**: `rustup` installed.
-*   **Android NDK**: Required for Android targets. Ensure `Rust/.cargo/config.toml` is configured correctly.
-*   **Wasm-bindgen**: Installed automatically by the build script if missing (`cargo install wasm-bindgen-cli`).
-*   **Apple Deployment Targets**: The script sets `IPHONEOS_DEPLOYMENT_TARGET=14.0` and `MACOSX_DEPLOYMENT_TARGET=11.0` to match Swift Package floors.
+*   **Android NDK**: Required for Android targets. Ensure `Rust/.cargo/config.toml` points to the correct NDK path.
+*   **Wasm-bindgen**: Installed automatically by the build script if missing.
+*   **Xcode Command Line Tools**: Required for `xcodebuild` and `lipo`.
 
 ### Building
 
 Run the build script from the repository root:
 
 ```bash
+chmod +x build-rust.sh
 ./build-rust.sh
 ```
 
 This script will:
-1.  Install necessary Rust targets (`aarch64-apple-ios`, `x86_64-apple-darwin`, `aarch64-linux-android`, `wasm32-unknown-unknown`, etc.).
-2.  Build the `rust_ffi` crate for each target.
-3.  Create `RustFFI.xcframework` from Apple binaries.
-4.  Copy `.so` files to `Kmp/kotlinapi/src/androidMain/jniLibs/`.
-5.  Generate WebAssembly bindings in `Rust/pkg/`.
+1.  Install necessary Rust targets (Apple, Android, WASM).
+2.  Build the Rust crate for each target.
+3.  Create `RustFFI.xcframework` containing universal binaries for iOS (device/simulator) and macOS.
+4.  Copy `.so` libraries to the Android `jniLibs` directory.
+5.  Generate the WebAssembly package in `pkg/`.
 
 ## Usage
 
 ### Swift (iOS/macOS)
 
-Import the `Api` package. The Swift wrapper handles memory safety and cancellation.
+Import the `Api` module in your Swift code. The API is exposed via the `Api` enum and `ProjectService` struct.
+
+#### AI Endpoints
+
+All AI endpoints are async and support cancellation. They return `Data` (bytes) on success.
 
 ```swift
 import Api
 
-// Generate an image
+// Example: Generate an image
 let imageData = await Api.flux2Pro(
     user: "my_user",
-    password: "my_pass",
-    prompt: "a red apple on a wooden table"
+    password: "my_password",
+    prompt: "a futuristic city"
 )
 
-// Generate video from image + audio
-let videoData = await Api.ltx2_3a2v(
+// Example: Image-to-Image
+let inputImage = ... // Data
+let resultImage = await Api.flux2DevI2I(
     user: "my_user",
-    password: "my_pass",
-    image: imageBytes,
-    audio: audioBytes,
-    prompt: "the man walks forward"
+    password: "my_password",
+    image: inputImage,
+    prompt: "make it rainy"
 )
 
-// Save file with XMP metadata
+// Example: Chat
+let messages: [(Api.Role, String)] = [
+    (.user, "Hello")
+]
+let response = await Api.qwen3_6_35b_a3b(
+    user: "my_user",
+    password: "my_password",
+    messages: messages
+)
+// response contains the original messages + the assistant's reply
+```
+
+#### Project Service (XMP Metadata)
+
+`ProjectService` handles saving files to the app's Documents directory and embedding/reading XMP metadata.
+
+```swift
+import Api
+
+// Save a file with metadata
+let fileData = ... // Data
 ProjectService.saveFile(
-    imageData,
-    named: "apple.png",
-    prompt: "red apple",
-    model: "flux-pro",
-    subject: ["fruit", "table"]
+    fileData,
+    named: "generated.png",
+    prompt: "A cat",
+    model: "flux-2",
+    subject: ["cat", "outdoor"]
 )
 
 // Read metadata
-let prompt = ProjectService.getPrompt("apple.png")
-let rating = ProjectService.getLike("apple.png")
+let prompt = ProjectService.getPrompt("generated.png") // "A cat"
+let model = ProjectService.getModel("generated.png")   // "flux-2"
+let subjects = ProjectService.getSubject("generated.png") // ["cat", "outdoor"]
+
+// Like/Unlike
+ProjectService.like("generated.png", true)
+let isLiked = ProjectService.getLike("generated.png") // true
 ```
 
-### Android (Kotlin)
+### Android (Kotlin/JNI)
 
-The Rust crate exposes JNI functions directly. The Kotlin side typically loads the library and calls native methods.
+The Rust library is exposed via JNI. The Kotlin side should load the library and call the native methods defined in `Rust/src/api/jni_api.rs`.
 
 ```kotlin
-// In your Kotlin code
+// Kotlin side example
 class FemiApiJvm {
     companion object {
         init { System.loadLibrary("rust_ffi") }
@@ -107,88 +142,92 @@ class FemiApiJvm {
         prompt: String,
         cancelFlag: Long
     ): ByteArray
+
+    // ... other FFI bindings
 }
 ```
 
+*Note: The `cancelFlag` is a pointer to an atomic boolean. Set it to 1 to cancel the operation.*
+
 ### WebAssembly
 
-The crate exposes `wasm_bindgen` functions. Use the generated JS bindings in `Rust/pkg/`.
+The WASM module is built using `wasm-bindgen`. It exposes async functions that return `Uint8Array` or `String`.
 
 ```javascript
 import init, { wasm_flux2_pro } from './pkg/rust_ffi.js';
 
 await init();
-const result = await wasm_flux2_pro(user, password, prompt);
+const result = await wasm_flux2_pro("user", "pass", "prompt");
 // result is a Uint8Array
 ```
 
 ## API Endpoints
 
-The Rust FFI exposes the following AI endpoints. All return `uint8_t*` (bytes) and `size_t` (length). On failure or cancellation, they return embedded fallback assets (images/videos) or error strings.
+The following AI endpoints are supported. All return `Data` (bytes) on success.
 
-| Function | Description | Inputs |
+| Endpoint | Function | Description |
 | :--- | :--- | :--- |
-| `rust_ffi_z_image_turbo` | Text-to-Image | `user`, `password`, `prompt` |
-| `rust_ffi_flux2_pro` | Text-to-Image | `user`, `password`, `prompt` |
-| `rust_ffi_flux2_dev_i2i` | Image-to-Image (Dev) | `user`, `password`, `image_b64`, `prompt` |
-| `rust_ffi_flux2_klein_i2i` | Image-to-Image (Klein) | `user`, `password`, `image_b64`, `image2_b64`, `prompt` |
-| `rust_ffi_nano_banana2` | Text-to-Image | `user`, `password`, `prompt` |
-| `rust_ffi_ltx2_3a2v` | Image+Audio-to-Video | `user`, `password`, `image_b64`, `audio_b64`, `prompt` |
-| `rust_ffi_qwen3_asr_flash` | Audio-to-Text (Lyrics) | `user`, `password`, `audio_b64` |
-| `rust_ffi_qwen3_6_35b_a3b` | Chat Completion | `user`, `password`, `messages_json` |
+| **ZImageTurbo** | `Api.zImageTurbo` | Text-to-Image generation. |
+| **Flux2Pro** | `Api.flux2Pro` | Text-to-Image generation (Flux Pro). |
+| **Flux2DevI2I** | `Api.flux2DevI2I` | Image-to-Image generation (Flux Dev). |
+| **Flux2KleinI2I** | `Api.flux2KleinI2I` | Image-to-Image generation with two input images (Flux Klein). |
+| **NanoBanana2** | `Api.nanoBanana2` | Text-to-Image generation (Nano Banana). |
+| **Ltx2_3A2V** | `Api.ltx2_3a2v` | Image + Audio to Video generation. |
+| **Qwen3AsrFlash** | `Api.qwen3AsrFlash` | Audio-to-Text (Lyrics transcription). Returns a `String`. |
+| **Qwen3_6_35b_a3b** | `Api.qwen3_6_35b_a3b` | Chat completion. Returns updated message history. |
 
-### Cancellation
+## Cancellation
 
-All AI FFI functions accept a `cancel_flag: *const u8`. If the value at this address is non-zero, the operation cancels and returns a fallback asset. The Swift wrapper manages this flag automatically via `withTaskCancellationHandler`.
+All AI endpoints support cancellation via a `cancelFlag` pointer.
 
-## XMP Metadata (ProjectService)
+1.  Allocate an `UnsafeMutablePointer<UInt8>` and initialize it to `0`.
+2.  Pass the pointer's address to the FFI function.
+3.  To cancel, set the value at the pointer to `1`.
+4.  The FFI function will detect the change and return a fallback asset (image/video/text) immediately.
 
-The `ProjectService` module embeds and reads XMP metadata into images and videos using the Adobe XMP Toolkit (Apple) or `xmpkit` (Android/WASM).
+In Swift, this is handled automatically by the `Api` wrapper using `withTaskCancellationHandler`.
 
-### Embedded Properties
+## Fallback Assets
 
-*   **Prompt**: Stored in `dc:description` (Lang Alt) and `Iptc4xmpExt:AIPromptInformation`.
-*   **Model**: Stored in `xmp:CreatorTool` and `Iptc4xmpExt:AISystemUsed`.
-*   **Subject**: Stored in `dc:subject` (Bag).
-*   **Rating**: Stored in `xmp:Rating` (5 = liked, 0 = not liked, -100 = absent).
+If an API call fails or is cancelled, the Rust FFI returns embedded fallback assets:
 
-### API
+*   **Images**: `fallback.png` (generic error) or `topup.jpg` (payment required).
+*   **Videos**: `could-not-generate.mp4` (generic error) or `topup-video.mp4` (payment required).
 
-*   `psxmp_embed(path, prompt, model, subjects, count)`: Embeds metadata into a file.
-*   `psxmp_read_prompt(path, buf, len)`: Reads prompt.
-*   `psxmp_read_model(path, buf, len)`: Reads model.
-*   `psxmp_read_subject_count(path)`: Returns number of subjects.
-*   `psxmp_read_subject_at(path, index, buf, len)`: Reads subject at index.
-*   `psxmp_set_rating(path, rating)`: Sets rating.
-*   `psxmp_read_rating(path)`: Reads rating.
-*   `psxmp_read_property(path, ns, name, buf, len)`: Reads arbitrary XMP property.
-
-## ID3 Lyrics Extraction
-
-Extracts synchronized lyrics (SYLT) from MP3 files.
-
-*   **Native**: `id3_ffi_extract_sylt(bytes, len, out_len)` returns a heap-allocated UTF-8 JSON string.
-*   **WASM**: `extract_sylt(bytes)` returns a JSON string.
+These assets are compiled into the Rust binary using `include_bytes!`.
 
 ## Testing
 
 ### Swift Tests
 
-Located in `Tests/ApiTests/`. Run via Swift Package Manager:
+Run Swift tests using Xcode or the Swift CLI:
 
 ```bash
 swift test
 ```
 
-Tests use a live server with auto-funded test accounts.
+Tests are located in `Tests/ApiTests/`. They use a live server with auto-funded test accounts.
 
 ### Rust Tests
 
-Located in `Rust/tests/`. Run via Cargo:
+Run Rust integration tests:
 
 ```bash
 cd Rust
 cargo test
 ```
 
-Tests include integration tests for all AI endpoints and round-trip tests for XMP metadata.
+Tests are located in `Rust/tests/`. They verify FFI behavior and XMP round-trips.
+
+## Non-Obvious Conventions
+
+*   **Memory Management**: FFI functions return heap-allocated pointers (`*mut u8`). The caller is responsible for freeing this memory. In Swift, the wrapper uses `Data(bytesNoCopy:count:deallocator:)` to handle this automatically. In Rust tests, use the `take` helper to reclaim memory.
+*   **XMP Namespaces**: The project uses specific XMP namespaces for AI metadata:
+    *   `dc:description`: Prompt (Lang Alt).
+    *   `Iptc4xmpExt:AIPromptInformation`: Prompt (String).
+    *   `xmp:CreatorTool`: Model name.
+    *   `Iptc4xmpExt:AISystemUsed`: Model name (String).
+    *   `dc:subject`: Subject keywords (Bag).
+    *   `xmp:Rating`: Like state (5 = liked, 0 = not).
+*   **Android JNI Naming**: JNI function names follow the pattern `Java_market_femi_kotlinapi_<ClassName>_<methodName>`.
+*   **WASM OPFS**: On Web, `ProjectService` uses the Origin Private File System (OPFS) for persistence.

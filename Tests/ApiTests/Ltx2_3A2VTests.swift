@@ -16,8 +16,8 @@ struct Ltx2_3A2VTests {
             prompt: "the man walks forward in time with the music"
         )
         #expect(!video.isEmpty)
-        #expect(video != Api.fallbackVideo)
-        #expect(video != Api.topupVideo)
+        #expect(video != TestAssets.fallbackVideo)
+        #expect(video != TestAssets.topupVideo)
     }
 
     @Test func cancellationReturnsFallback() async throws {
@@ -39,7 +39,7 @@ struct Ltx2_3A2VTests {
         let start = Date()
         let result = await task.value
         let elapsed = Date().timeIntervalSince(start)
-        #expect(result == Api.fallbackVideo)
+        #expect(result == TestAssets.fallbackVideo)
         #expect(elapsed < 1.0, "cancel should resolve in <1s, took \(elapsed)s")
     }
 }

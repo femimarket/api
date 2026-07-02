@@ -13,8 +13,8 @@ struct Flux2DevI2ITests {
             prompt: "place him in a sunlit room"
         )
         #expect(!img.isEmpty)
-        #expect(img != Api.fallbackImage)
-        #expect(img != Api.topupImage)
+        #expect(img != TestAssets.fallbackImage)
+        #expect(img != TestAssets.topupImage)
     }
 
     @Test func cancellationReturnsFallback() async throws {
@@ -28,7 +28,7 @@ struct Flux2DevI2ITests {
         let start = Date()
         let result = await task.value
         let elapsed = Date().timeIntervalSince(start)
-        #expect(result == Api.fallbackImage)
+        #expect(result == TestAssets.fallbackImage)
         #expect(elapsed < 1.0, "cancel should resolve in <1s, took \(elapsed)s")
     }
 }

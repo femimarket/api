@@ -10,8 +10,8 @@ struct NanoBanana2Tests {
             prompt: "a red apple on a wooden table"
         )
         #expect(!img.isEmpty)
-        #expect(img != Api.fallbackImage)
-        #expect(img != Api.topupImage)
+        #expect(img != TestAssets.fallbackImage)
+        #expect(img != TestAssets.topupImage)
     }
 
     @Test func cancellationReturnsFallback() async throws {
@@ -23,7 +23,7 @@ struct NanoBanana2Tests {
         let start = Date()
         let result = await task.value
         let elapsed = Date().timeIntervalSince(start)
-        #expect(result == Api.fallbackImage)
+        #expect(result == TestAssets.fallbackImage)
         #expect(elapsed < 1.0, "cancel should resolve in <1s, took \(elapsed)s")
     }
 }
