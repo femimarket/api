@@ -29,26 +29,20 @@ extension Api {
         return await withTaskCancellationHandler {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
-                var status: UInt16 = 0
                 var len = 0
-                let ptr: UnsafeMutablePointer<UInt8>? = user.withCString { u in
+                let ptr = user.withCString { u in
                     password.withCString { pw in
                         messagesJson.withCString { m in
-                            rust_ffi_qwen3_6_35b_a3b(u, pw, m, p, &status, &len)
+                            rust_ffi_qwen3_6_35b_a3b(u, pw, m, p, &len)!
                         }
                     }
                 }
-                let body: Data = (ptr != nil && len > 0)
-                    ? Data(bytesNoCopy: ptr!, count: len, deallocator: .free)
-                    : Data()
-                if status == 200,
-                   let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
-                   let action = json["action"] as? [String: Any],
-                   let msgs = action["messages"] as? [[String: Any]],
-                   let last = msgs.last,
-                   let content = last["content"] as? String,
-                   !content.isEmpty {
-                    return original + [(role: .assistant, content: content)]
+                let body = Data(bytesNoCopy: ptr, count: len, deallocator: .free)
+                if let arr = try? JSONSerialization.jsonObject(with: body) as? [[String: String]],
+                   let last = arr.last,
+                   let role = last["role"].flatMap(Role.init(rawValue:)),
+                   let content = last["content"] {
+                    return original + [(role: role, content: content)]
                 }
                 return original + [(role: .assistant, content: "Could not respond")]
             }.value

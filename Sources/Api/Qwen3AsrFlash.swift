@@ -15,26 +15,16 @@ extension Api {
         return await withTaskCancellationHandler {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
-                var status: UInt16 = 0
                 var len = 0
-                let ptr: UnsafeMutablePointer<UInt8>? = user.withCString { u in
+                let ptr = user.withCString { u in
                     password.withCString { pw in
                         audioB64.withCString { a in
-                            rust_ffi_qwen3_asr_flash(u, pw, a, p, &status, &len)
+                            rust_ffi_qwen3_asr_flash(u, pw, a, p, &len)!
                         }
                     }
                 }
-                let body: Data = (ptr != nil && len > 0)
-                    ? Data(bytesNoCopy: ptr!, count: len, deallocator: .free)
-                    : Data()
-                if status == 200,
-                   let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
-                   let action = json["action"] as? [String: Any],
-                   let lyrics = action["lyrics"] as? String,
-                   !lyrics.isEmpty {
-                    return lyrics
-                }
-                return status == 402 ? "Top up to transcribe lyrics" : "Could not process lyrics"
+                let body = Data(bytesNoCopy: ptr, count: len, deallocator: .free)
+                return String(data: body, encoding: .utf8)!
             }.value
         } onCancel: {
             UnsafeMutablePointer<UInt8>(bitPattern: flagAddr)?.pointee = 1

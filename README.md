@@ -1,122 +1,201 @@
-# Api
+# RustFFI
 
-`Api` is a Swift Package that provides a unified, async-first interface to a suite of AI models (image generation, image-to-image, video generation, speech-to-text, and LLM chat) via a Rust FFI layer. The Rust layer handles HTTP communication with `femi.market`, manages a shared Tokio runtime, and exposes a stable C ABI. The Swift layer wraps these FFI calls, handles structured cancellation, parses JSON responses, and returns user-friendly fallback assets on failure or payment errors.
+A cross-platform Rust FFI crate that provides a unified interface for AI media generation, transcription, and local file metadata management. It compiles to native libraries for iOS/macOS (via Swift Package Manager), Android (via JNI), and WebAssembly (via `wasm-bindgen`).
 
-## Architecture & Key Files
+## Overview
 
-The project is split into a Rust FFI crate and a Swift wrapper package:
+This project serves as the backend engine for the **Api** Swift package and the **Kotlin** multiplatform library. It handles:
 
-| Path | Purpose |
-|------|---------|
-| `Package.swift` | Swift Package manifest. Defines the `Api` target, links against `RustFFI.xcframework`, bundles fallback resources, and enforces Swift 6 language mode. |
-| `build-rust.sh` | Build script that compiles the Rust crate for iOS (device + simulator) and macOS, creates universal binaries via `lipo`, and packages everything into `RustFFI.xcframework`. |
-| `Rust/src/lib.rs` | Rust entry point. Initializes a shared `tokio::Runtime` and `reqwest::Client` via `OnceLock` to avoid per-call overhead. Delegates to model-specific modules. |
-| `Rust/include/RustFFI/RustFFI.h` | C header exposing all FFI functions. All functions share an identical signature pattern. |
-| `Rust/src/*.rs` | Rust implementations for each model endpoint. Each POSTs to `https://femi.market/api`, handles cancellation polling, and returns heap-allocated response bytes. |
-| `RustFFI.xcframework/` | Pre-built (or script-generated) framework containing compiled libraries and headers for iOS and macOS. |
-| `Sources/Api/Api.swift` | Enum holding fallback resources (`fallback.png`, `topup.jpg`, `could-not-generate.mp4`, `topup-video.mp4`). |
-| `Sources/Api/*.swift` | Swift async wrappers. Each model has a dedicated file (e.g., `Flux2Pro.swift`, `Qwen3_6_35b_a3b.swift`). Handles C interop, cancellation, and response parsing. |
-| `Tests/ApiTests/*.swift` | Swift Testing framework suite. Validates unfunded/missing credential fallbacks, cancellation behavior, and funded-user success paths. |
+1.  **AI Generation:** Calls remote APIs (via `https://femi.market/api`) for image generation (Flux, ZImage, Nano Banana), video generation (Ltx2), and text/audio processing (Qwen3).
+2.  **Local Metadata (XMP):** Embeds and reads XMP metadata (prompts, models, subjects, ratings) into local files (images, videos) using platform-specific backends (Adobe XMP Toolkit on Apple, `xmpkit` bytes manipulation on Android/WASM).
+3.  **Audio Lyrics (ID3):** Extracts synchronized lyrics (SYLT frames) from MP3 files.
 
-## Prerequisites
+## Architecture
 
-- macOS (required for building the xcframework and running tests)
-- Rust toolchain (`cargo`, `rustup`)
-- Swift 6.3+ toolchain
-- `xcodebuild` (bundled with Xcode, required for xcframework creation)
+The codebase is split into two main layers:
 
-## Building & Packaging
+### 1. Rust FFI (`Rust/`)
+The core logic written in Rust. It uses conditional compilation to expose different interfaces per platform:
+*   **Apple:** Exposes C functions via `RustFFI.h`. Consumed by Swift via `RustFFI.xcframework`.
+*   **Android:** Exposes JNI functions. Consumed by Kotlin via `System.loadLibrary("rust_ffi")`.
+*   **WebAssembly:** Exposes `wasm-bindgen` functions. Consumed by JS/TS via `pkg/`.
 
-1. Ensure the build script is executable:
-   ```bash
-   chmod +x build-rust.sh
-   ```
-2. Run the build script from the repository root:
-   ```bash
-   ./build-rust.sh
-   ```
-   This will:
-   - Add required `rustup` targets (`aarch64-apple-ios`, `aarch64-apple-ios-sim`, `x86_64-apple-ios`, `aarch64-apple-darwin`, `x86_64-apple-darwin`)
-   - Compile `librust_ffi.a` for each target in `--release` mode
-   - Create universal iOS simulator and macOS binaries using `lipo`
-   - Generate `RustFFI.xcframework` in the repository root
+**Key Files:**
+*   `Rust/src/lib.rs`: Entry point, defines shared constants (fallback images, API URL) and global singletons (Tokio runtime, HTTP client).
+*   `Rust/src/api/`: Modules for each AI endpoint (e.g., `flux2_pro.rs`, `qwen3_asr_flash.rs`). Each module contains:
+    *   `core_*`: Async logic for HTTP requests.
+    *   `native`: C ABI wrapper for non-WASM targets.
+    *   `wasm`: `wasm-bindgen` wrapper for WASM targets.
+*   `Rust/src/project_service/`: XMP metadata handling.
+    *   `shared/xmpkit_body.rs`: Platform-agnostic bytes-in/bytes-out logic.
+    *   `apple.rs`: Uses `xmp_toolkit` for path-based operations.
+    *   `android.rs`: JNI wrappers using `xmpkit_body`.
+    *   `wasm.rs`: OPFS (Origin Private File System) wrappers using `xmpkit_body`.
+*   `Rust/src/id3/`: ID3 tag parsing for lyrics extraction.
 
-The Swift package automatically consumes the framework. No additional configuration is needed.
+### 2. Platform Bindings
+*   **Swift (`Sources/Api/`):** Swift extensions on `Api` enum that call the Rust FFI. Handles memory management (converting `Data` to `UInt8` pointers) and task cancellation.
+*   **Kotlin (`Kmp/kotlinapi/`):** Kotlin `external` functions bound to the Rust JNI symbols.
+
+## Build & Install
+
+### Prerequisites
+*   **Rust:** `rustup` installed.
+*   **Swift:** Swift 6.3+ (for SwiftPM).
+*   **Android NDK:** Installed and configured in `Rust/.cargo/config.toml`.
+*   **Wasm-bindgen:** Installed on demand by the build script.
+
+### Build Script
+Run the following from the repository root to build for all platforms:
+
+```bash
+./build-rust.sh
+```
+
+This script:
+1.  Installs missing Rust targets (iOS, macOS, Android, WASM).
+2.  Builds `librust_ffi.a` for Apple targets and creates `RustFFI.xcframework`.
+3.  Builds `librust_ffi.so` for Android ABIs and copies them to `Kmp/kotlinapi/src/androidMain/jniLibs/`.
+4.  Builds `rust_ffi.wasm` and generates JS bindings in `pkg/`.
+
+### Manual Build Steps
+
+#### Apple (iOS/macOS)
+```bash
+cd Rust
+# Add targets
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
+
+# Build
+export IPHONEOS_DEPLOYMENT_TARGET=14.0
+export MACOSX_DEPLOYMENT_TARGET=11.0
+cargo build --release --target aarch64-apple-ios
+cargo build --release --target aarch64-apple-ios-sim
+cargo build --release --target x86_64-apple-ios
+cargo build --release --target aarch64-apple-darwin
+cargo build --release --target x86_64-apple-darwin
+
+# Create xcframework
+mkdir -p target/ios-sim-universal/release
+lipo -create target/aarch64-apple-ios-sim/release/librust_ffi.a target/x86_64-apple-ios/release/librust_ffi.a -output target/ios-sim-universal/release/librust_ffi.a
+mkdir -p target/macos-universal/release
+lipo -create target/aarch64-apple-darwin/release/librust_ffi.a target/x86_64-apple-darwin/release/librust_ffi.a -output target/macos-universal/release/librust_ffi.a
+
+xcodebuild -create-xcframework \
+  -library target/aarch64-apple-ios/release/librust_ffi.a -headers include \
+  -library target/ios-sim-universal/release/librust_ffi.a -headers include \
+  -library target/macos-universal/release/librust_ffi.a -headers include \
+  -output ../RustFFI.xcframework
+```
+
+#### Android
+```bash
+cd Rust
+rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+
+# Build and copy to jniLibs
+for triple in aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android; do
+  cargo build --release --target $triple
+  abi=$(echo $triple | sed 's/.*-//')
+  mkdir -p ../Kmp/kotlinapi/src/androidMain/jniLibs/$abi
+  cp target/$triple/release/librust_ffi.so ../Kmp/kotlinapi/src/androidMain/jniLibs/$abi/librust_ffi.so
+done
+```
+
+#### WebAssembly
+```bash
+cd Rust
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli # if not installed
+cargo build --release --target wasm32-unknown-unknown
+wasm-bindgen target/wasm32-unknown-unknown/release/rust_ffi.wasm --out-dir pkg --target web
+```
 
 ## Usage
 
-Import the package in your Swift code. All public methods are `async` and return `Data` or `String`. They require HTTP Basic Auth credentials (`user` and `password`).
+### Swift (iOS/macOS)
+Import the `Api` package via Swift Package Manager. The `RustFFI.xcframework` is included as a binary target.
 
-### Image Generation
 ```swift
-let img = await Api.flux2Pro(user: "your_user", password: "your_pass", prompt: "a red apple on a wooden table")
-```
+import Api
 
-### Image-to-Image
-```swift
-let img = await Api.flux2DevI2I(user: "...", password: "...", image: inputData, prompt: "...")
-let img = await Api.flux2KleinI2I(user: "...", password: "...", image: img1, image2: img2, prompt: "...")
-```
-
-### Video Generation
-```swift
-let video = await Api.ltx2_3a2v(user: "...", password: "...", image: imgData, audio: audioData, prompt: "...")
-```
-
-### Speech-to-Text (Lyrics)
-```swift
-let lyrics = await Api.qwen3AsrFlash(user: "...", password: "...", audio: audioData)
-```
-
-### LLM Chat
-```swift
-let messages = await Api.qwen3_6_35b_a3b(
-    user: "...", 
-    password: "...", 
-    messages: [(role: .user, content: "say hi in one word")]
+// Generate an image
+let imageData = await Api.flux2Pro(
+    user: "username",
+    password: "password",
+    prompt: "a red apple"
 )
-// Returns the original messages + the assistant's reply
+
+// Save with metadata
+ProjectService.saveFile(
+    imageData,
+    named: "apple.png",
+    prompt: "a red apple",
+    model: "flux-2",
+    subject: ["fruit", "red"]
+)
 ```
 
-## Cancellation & Error Handling
+### Kotlin (Android/JVM/WASM)
+Use the `rust_ffi` library loaded via JNI.
 
-### Task Cancellation
-Each Swift wrapper uses `withTaskCancellationHandler` to allocate a cancellation flag pointer. When the Swift `Task` is cancelled, the flag is set to `1`. The Rust side polls this flag via `AtomicU8` every 10ms and aborts the HTTP request if triggered, returning a status of `0` and an empty body. Swift then returns the appropriate fallback asset.
+```kotlin
+// Android
+System.loadLibrary("rust_ffi")
 
-### Error & Fallback Behavior
-- **Network/Transport Failures**: Returns `Api.fallbackImage` / `Api.fallbackVideo` (or `"Could not process lyrics"` / `"Could not respond"` for text endpoints).
-- **HTTP 402 (Payment Required)**: Returns `Api.topupImage` / `Api.topupVideo` (or `"Top up to transcribe lyrics"` for ASR).
-- **HTTP 200 with valid payload**: Parses the JSON response, extracts the base64-encoded file/lyrics/messages from the `action` object, and returns the decoded data.
-- **Memory Management**: Rust returns heap-allocated bytes. Swift safely transfers ownership using `Data(bytesNoCopy:count:deallocator: .free)`, avoiding unnecessary copies and ensuring proper deallocation.
+// Call FFI
+val result = FemiApiJvm.rustFfiFlux2Pro(user, password, prompt, cancelFlag)
+```
+
+### WebAssembly
+Import the generated JS module.
+
+```javascript
+import init, { wasm_flux2_pro } from './pkg/rust_ffi.js';
+
+await init();
+const result = await wasm_flux2_pro(user, password, prompt);
+```
+
+## API Endpoints
+
+The Rust FFI exposes the following functions (names vary slightly by platform binding):
+
+| Function | Description | Inputs | Output |
+| :--- | :--- | :--- | :--- |
+| `rust_ffi_z_image_turbo` | Image generation | user, password, prompt | Image bytes |
+| `rust_ffi_flux2_pro` | Image generation | user, password, prompt | Image bytes |
+| `rust_ffi_flux2_dev_i2i` | Image-to-Image | user, password, image_b64, prompt | Image bytes |
+| `rust_ffi_flux2_klein_i2i` | Image-to-Image (2 images) | user, password, image1_b64, image2_b64, prompt | Image bytes |
+| `rust_ffi_nano_banana2` | Image generation | user, password, prompt | Image bytes |
+| `rust_ffi_ltx2_3a2v` | Video generation | user, password, image_b64, audio_b64, prompt | Video bytes |
+| `rust_ffi_qwen3_asr_flash` | Audio transcription | user, password, audio_b64 | Text (lyrics) |
+| `rust_ffi_qwen3_6_35b_a3b` | Chat completion | user, password, messages_json | JSON (messages + reply) |
+| `psxmp_embed` | Embed XMP metadata | path, prompt, model, subjects | 0 on success |
+| `psxmp_read_prompt` | Read prompt | path, buf, buf_len | Length written |
+| `psxmp_read_model` | Read model | path, buf, buf_len | Length written |
+| `psxmp_read_subject_count` | Read subject count | path | Count |
+| `psxmp_read_subject_at` | Read subject by index | path, index, buf, buf_len | Length written |
+| `psxmp_set_rating` | Set rating (like) | path, rating | 0 on success |
+| `psxmp_read_rating` | Read rating | path | Rating |
+| `psxmp_read_property` | Read arbitrary XMP prop | path, ns, name, buf, buf_len | Length written |
+| `id3_ffi_extract_sylt` | Extract lyrics from MP3 | bytes, bytes_len | JSON string |
+
+## Cancellation
+All AI generation functions accept a `cancel_flag` pointer. If the byte at this address is set to `1` while the operation is running, the Rust side will abort the request and return a fallback image/video/text.
 
 ## Testing
 
-Tests use the Swift Testing framework and require live credentials to verify funded-user behavior.
-
-Run tests from the repository root:
+### Rust Tests
+Run integration tests against the live server:
 ```bash
-API_USER="your_username" API_PASSWORD="your_password" swift test
+cd Rust
+cargo test
 ```
+*Note: Tests create a temporary user account (`funded-test-<uuid>`) with auto-funded credits.*
 
-Test coverage includes:
-- Unfunded/missing credentials returning correct fallbacks across all endpoints
-- Task cancellation resolving in <1s and returning fallbacks
-- Funded users returning actual generated content (images, videos, lyrics, chat replies)
-- Edge cases: empty prompts, empty audio, unicode prompts, empty message arrays
+### Swift Tests
+Run Swift tests via Xcode or `swift test`. Tests use the same `testUser`/`testPassword` pattern.
 
-## Non-Obvious Conventions
-
-- **Uniform FFI Signature**: Every Rust function follows `(user, password, inputs..., cancel_flag, out_status, out_len) -> *mut u8`. This simplifies Swift interop and allows consistent wrapper generation.
-- **Shared Runtime & Client**: `Rust/src/lib.rs` uses `OnceLock` to initialize a single `tokio::Runtime` (2 workers) and `reqwest::Client` (600s timeout). This avoids per-call initialization overhead and connection churn.
-- **Detached Tasks**: Swift wrappers run the FFI call on `Task.detached(priority: .userInitiated)` to prevent main-thread blocking and ensure cancellation propagates correctly.
-- **JSON Payload Structure**: The Rust layer always wraps requests in a standard envelope:
-  ```json
-  {
-    "id": "<uuid>",
-    "user_id": "",
-    "action": { "type": "<ModelType>", ... },
-    "status": "Pending",
-    "credit": 0
-  }
-  ```
-- **Swift 6 Language Mode**: The package explicitly requires `swiftLanguageModes: [.v6]` in `Package.swift` to enforce strict concurrency checking.
+### Kotlin Tests
+Run via Gradle. Tests use the JNI bindings to verify Android-specific behavior.
