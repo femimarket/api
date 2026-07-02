@@ -17,4 +17,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "multiplatform-library-template"
-include(":kotlinapi")
+include(":api")

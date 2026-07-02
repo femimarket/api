@@ -2,7 +2,7 @@
 # Builds the Rust FFI crate for every platform the workspace consumes:
 #
 #   RustFFI.xcframework                        (SwiftPM binaryTarget path)
-#   Kmp/kotlinapi/src/androidMain/jniLibs/*    (System.loadLibrary("rust_ffi"))
+#   Kmp/api/src/androidMain/jniLibs/*          (System.loadLibrary("rust_ffi"))
 #   Rust/pkg/                                  (npm("rust_ffi", ...) in build.gradle.kts)
 #
 # NDK linker/env vars for the android targets come from Rust/.cargo/config.toml.
@@ -73,7 +73,7 @@ xcodebuild -create-xcframework \
 # Android
 ########################################
 echo ">> android targets"
-JNI_LIBS="$ROOT/Kmp/kotlinapi/src/androidMain/jniLibs"
+JNI_LIBS="$ROOT/Kmp/api/src/androidMain/jniLibs"
 rm -rf "$JNI_LIBS"
 for pair in "${ANDROID_PAIRS[@]}"; do
   triple="${pair%%:*}"
