@@ -51,7 +51,12 @@ private fun loadRustFfi(b64: String): Promise<RustFfiModule> = js("""
 (function(){
   var code = atob(b64);
   var url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
-  return import(/* webpackIgnore: true */ url).then(function(m){ return m.default().then(function(){ return m; }); });
+  // Build the importer via Function so the specifier stays a runtime value:
+  // webpack rewrites any literal import() into a broken context-require, and the
+  // /* webpackIgnore */ comment gets stripped when Kotlin re-prints this js() block.
+  // A string can't be statically analyzed by webpack, and Kotlin preserves its contents.
+  var nativeImport = new Function('u', 'return import(u);');
+  return nativeImport(url).then(function(m){ return m.default().then(function(){ return m; }); });
 })()
 """)
 
