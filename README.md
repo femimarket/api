@@ -1,165 +1,207 @@
-# Rust FFI Bridge
+# RustFFI
 
-A cross-platform Rust library providing a unified FFI (Foreign Function Interface) for the **Femi** application. It exposes AI generation endpoints (image, video, audio, LLM) and a local Project Service (XMP metadata management) to Swift (iOS/macOS), Kotlin (Android), and WebAssembly (Web).
+A cross-platform Rust FFI crate that provides a unified interface for AI media generation (image, video, audio transcription, LLM chat) and local project metadata management (XMP). It targets **Apple (iOS/macOS)**, **Android**, and **WebAssembly (Kotlin Multiplatform)**.
 
 ## Overview
 
-This crate compiles to native libraries for Apple platforms and Android, and a WebAssembly module for the web. It serves as the backend for the `Api` Swift package and the `Kmp` Kotlin Multiplatform module.
+This project bridges a remote AI API (`https://femi.market/api`) and local file storage to native mobile and web applications. It handles:
 
-### Key Features
-- **Multi-Platform Support**: Builds for `aarch64-apple-ios`, `aarch64-apple-darwin`, `aarch64-linux-android`, and `wasm32-unknown-unknown`.
-- **AI Endpoints**: Wraps HTTP calls to `https://femi.market/api` for Flux, ZImage, Qwen, and LTX models.
-- **Project Service**: Manages local file storage and XMP metadata embedding (prompt, model, subject, likes) using `xmp_toolkit` on Apple and a pure-Rust byte-based implementation on Android/Web.
-- **Cancellation**: Supports cooperative cancellation via atomic flags for all long-running API calls.
-- **Self-Contained Web**: The WebAssembly output is inlined into a single JavaScript module and embedded as a base64 Kotlin constant for distribution without external assets.
+1.  **AI Endpoints**: Image generation, image-to-image, video generation, audio transcription, and LLM chat.
+2.  **Project Service**: Local storage of generated assets with embedded XMP metadata (prompts, models, subjects, ratings) and in-memory state for character casting/image editing.
+3.  **ID3 Processing**: Extraction of synchronized lyrics (SYLT) from MP3 files.
+
+The crate is compiled into platform-specific binaries:
+*   **Apple**: `RustFFI.xcframework` (static library wrapped in an XCFramework).
+*   **Android**: `librust_ffi.so` (JNI library).
+*   **Web**: `pkg/rust_ffi.js` + embedded `.wasm` (self-contained ES module).
 
 ## Architecture
 
-The project is structured into three main layers:
+The codebase is split into three main layers:
 
-1.  **Rust Core (`Rust/`)**: The source of truth. Contains the FFI definitions, API clients, and platform-specific backends.
-2.  **Swift Package (`Sources/Api/`)**: A Swift Package that consumes the `RustFFI.xcframework`. It provides a clean Swift API (`Api.flux2Pro`, `ProjectService.saveFile`, etc.) over the C ABI.
-3.  **Kotlin Multiplatform (`Kmp/`)**: Consumes the Android `.so` files and the inlined WebAssembly bundle.
+### 1. Rust Core (`Rust/`)
+The source of truth. Uses conditional compilation (`#[cfg]`) to expose different interfaces per platform.
 
-### Platform Backends
+*   **`src/api/`**: Implements the AI endpoints. Each endpoint (e.g., `flux2_pro.rs`) contains:
+    *   `core_*`: Pure async Rust logic (HTTP POST, JSON parsing, fallback resolution).
+    *   `native`: C-ABI wrappers for Apple/Android. Handles string marshaling, cancellation flags, and memory ownership.
+    *   `wasm`: `wasm_bindgen` wrappers for Web.
+*   **`src/project_service/`**: Manages local files.
+    *   `shared/xmpkit_body.rs`: Pure Rust logic for embedding/reading XMP metadata into bytes. Used by Android and WASM.
+    *   `apple.rs`: Uses `xmp_toolkit` for smart XMP handling on Apple.
+    *   `android.rs`: JNI wrappers that read/write files directly using `xmpkit_body`.
+    *   `wasm.rs`: Uses the Web File System Access API (OPFS) for storage.
+*   **`src/id3/`**: MP3 SYLT extraction.
+*   **`src/lib.rs`**: Entry point, global Tokio runtime (native), and shared constants.
 
-| Platform | Backend Implementation | File I/O | Metadata Library |
-| :--- | :--- | :--- | :--- |
-| **Apple** | `Rust/src/project_service/apple.rs` | `std::fs` (Documents dir) | `xmp_toolkit` (Smart Handler) |
-| **Android** | `Rust/src/project_service/android.rs` | `std::fs` (Context files dir) | `xmpkit` (Byte-based) |
-| **Web** | `Rust/src/project_service/wasm.rs` | OPFS (Origin Private File System) | `xmpkit` (Byte-based) |
+### 2. Platform Bindings
+*   **Swift (`Sources/Api/`)**: Thin wrappers around the C-ABI. Uses `withTaskCancellationHandler` to support async cancellation.
+*   **Kotlin/Android (`Kmp/api/src/androidMain/`)**: Uses JNI to call `librust_ffi.so`.
+*   **Kotlin/Web (`Kmp/api/src/webMain/`)**: Loads the embedded WASM module from a base64 constant (`RustFfiBundle.kt`).
+
+### 3. Build System
+*   **`build-rust.sh`**: The single entry point for building. It cross-compiles for all targets, generates the XCFramework, copies `.so` files for Android, and inlines the WASM into the JS glue code and Kotlin bundle.
+
+## Key Files
+
+| Path | Description |
+| :--- | :--- |
+| `build-rust.sh` | Master build script. Run this to generate all artifacts. |
+| `Rust/src/lib.rs` | Rust library root. Defines global clients and fallback assets. |
+| `Rust/include/RustFFI/RustFFI.h` | The C header defining the public FFI API. |
+| `RustFFI.xcframework/` | Generated Apple binary. |
+| `Kmp/api/src/androidMain/jniLibs/` | Generated Android `.so` libraries. |
+| `Rust/pkg/` | Generated Web artifacts (JS + embedded WASM). |
+| `Kmp/api/src/webMain/kotlin/market/femi/api/RustFfiBundle.kt` | Generated Kotlin constant containing the base64-encoded WASM module. |
+| `Sources/Api/*.swift` | Swift extensions for `Api` enum and `ProjectService`. |
 
 ## Installation & Build
 
 ### Prerequisites
+*   **Rust**: `rustup` installed.
+*   **Android NDK**: Installed and configured in `Rust/.cargo/config.toml`.
+*   **Apple SDKs**: Xcode command line tools.
+*   **Node.js**: Required for the WASM inlining step.
+*   **wasm-bindgen-cli**: Installed automatically by the build script if missing.
 
-- **Rust**: `rustup` installed.
-- **Targets**:
-  ```bash
-  rustup target add aarch64-apple-ios aarch64-apple-ios-sim aarch64-apple-darwin wasm32-unknown-unknown
-  rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
-  ```
-- **Android NDK**: Ensure `ANDROID_NDK_HOME` or `NDK_HOME` is set, or that the NDK is installed via Android Studio. The build script reads config from `Rust/.cargo/config.toml`.
-- **Wasm-bindgen**: `cargo install wasm-bindgen-cli` (installed automatically if missing).
-- **Xcode**: Required for creating the `xcframework`.
-
-### Build Script
-
-Run the build script from the repository root:
+### Building All Targets
+From the repository root:
 
 ```bash
+chmod +x build-rust.sh
 ./build-rust.sh
 ```
 
-This script performs the following:
-1.  Installs missing Rust targets and `wasm-bindgen-cli`.
-2.  Compiles the library for all Apple, Android, and Web targets.
-3.  **Apple**: Creates `RustFFI.xcframework` containing static libraries for iOS (device/simulator) and macOS.
-4.  **Android**: Copies `.so` files to `Kmp/api/src/androidMain/jniLibs/<abi>/`.
-5.  **Web**:
-    -   Runs `wasm-bindgen` on the `.wasm` output.
-    -   Inlines the `.wasm` binary into `pkg/rust_ffi.js` as base64.
-    -   Base64-encodes the resulting JS glue code and writes it to `Kmp/api/src/webMain/kotlin/market/femi/api/RustFfiBundle.kt`.
+This script will:
+1.  Add necessary Rust targets (`aarch64-apple-ios`, `aarch64-linux-android`, `wasm32-unknown-unknown`, etc.).
+2.  Build the Apple static libraries and combine them into `RustFFI.xcframework`.
+3.  Build Android `.so` files and place them in `Kmp/api/src/androidMain/jniLibs/`.
+4.  Build the WASM module, inline it into the JS glue code, and generate the Kotlin bundle.
 
-### Output Artifacts
+### Building Only Rust (for testing)
+```bash
+cd Rust
+cargo build --release
+```
 
--   `RustFFI.xcframework`: Used by the Swift Package.
--   `Kmp/api/src/androidMain/jniLibs/`: Used by the Android Gradle build.
--   `Kmp/api/src/webMain/kotlin/market/femi/api/RustFfiBundle.kt`: Used by the Kotlin Web module.
+## Usage
 
-## API Reference
-
-### C FFI (`Rust/include/RustFFI/RustFFI.h`)
-
-The C header defines the public interface. All functions return `uint8_t*` (heap-allocated bytes) or `void`/`int32_t` for status codes.
-
-#### AI Endpoints
-All AI functions take `user`, `password`, and a `cancel_flag` (pointer to an atomic `u8`; `0` = no cancel, `1` = cancel). They return a pointer to the result bytes and set `out_len`.
-
--   `rust_ffi_z_image_turbo`: Text-to-Image.
--   `rust_ffi_flux2_pro`: Text-to-Image (Flux Pro).
--   `rust_ffi_flux2_dev_i2i`: Image-to-Image (Flux Dev).
--   `rust_ffi_flux2_klein_i2i`: Image-to-Image (Flux Klein, dual image).
--   `rust_ffi_nano_banana2`: Text-to-Image (Nano Banana).
--   `rust_ffi_ltx2_3a2v`: Image+Audio-to-Video.
--   `rust_ffi_qwen3_asr_flash`: Audio-to-Text (Lyrics).
--   `rust_ffi_qwen3_6_35b_a3b`: Text-to-Text (LLM Chat).
-
-#### Project Service (XMP)
-Functions prefixed with `psxmp_` manage local files. Rust owns the Documents directory.
-
--   `psxmp_save_file`: Save file with optional XMP metadata (prompt, model, subjects).
--   `psxmp_save_audio`: Save audio file (replaces any existing audio).
--   `psxmp_like`: Set/unset "like" status (writes XMP Rating).
--   `psxmp_get_*`: Retrieve metadata (prompt, model, subject, like status, URL).
--   `psxmp_get_all_generations`: List all files in Documents.
--   `psxmp_set_character_cast` / `psxmp_get_character_cast`: In-memory state for character casting.
--   `psxmp_set_image_edit` / `psxmp_get_image_edit`: In-memory state for image editing context.
-
-#### ID3 SYLT
--   `id3_ffi_extract_sylt`: Extract synchronized lyrics from MP3 bytes. Returns JSON array.
-
-### Swift API (`Sources/Api/`)
-
-The Swift package wraps the C FFI into async/await functions.
+### Swift (iOS/macOS)
+Import the `Api` module. The `Api` enum provides async methods for each AI endpoint.
 
 ```swift
 import Api
 
 // Image Generation
-let image = await Api.flux2Pro(user: "user", password: "pass", prompt: "cat")
+let image = await Api.flux2Pro(
+    user: "my_user",
+    password: "my_pass",
+    prompt: "a cat in space"
+)
 
 // Project Service
-ProjectService.saveFile(data, named: "image.png", prompt: "my prompt")
-let prompt = ProjectService.getPrompt("image.png")
+ProjectService.saveFile(image, named: "cat.png", prompt: "a cat in space")
+let prompt = ProjectService.getPrompt("cat.png")
 ```
 
-### Kotlin API (`Kmp/`)
-
-Kotlin uses JNI for Android and `RustFfiBundle` for Web.
+### Kotlin Multiplatform (Android)
+Call the JVM methods via the generated JNI bindings.
 
 ```kotlin
 // Android
-val result = FemiApiJvm.rustFfiFlux2Pro(user, password, prompt, cancelFlag)
-
-// Web
-val jsBundle = RustFfiBundle.RUST_FFI_JS_B64
-// Decoded and initialized at runtime
+val image = FemiApiJvm.rustFfiFlux2Pro(user, password, prompt)
+ProjectServiceJvm.psxmpSaveFile("cat.png", image, "a cat in space", null, null)
 ```
 
-## Key Files
+### Kotlin Multiplatform (Web)
+The WASM module is embedded in the Kotlin library. Initialize it once.
 
--   `build-rust.sh`: The master build script.
--   `Rust/src/lib.rs`: Entry point, defines fallback assets and shared client logic.
--   `Rust/src/api/`: Individual endpoint implementations (e.g., `flux2_pro.rs`). Each file contains `native` (C FFI) and `wasm` (JS bindings) modules.
--   `Rust/src/project_service/`: Platform-specific file/XMP handling.
-    -   `shared/xmpkit_body.rs`: Pure Rust XMP logic used by Android and Web.
-    -   `apple.rs`: Uses `xmp_toolkit` for Apple.
-    -   `android.rs`: JNI wrappers for Android.
-    -   `wasm.rs`: OPFS wrappers for Web.
--   `Package.swift`: Swift Package manifest, references `RustFFI.xcframework`.
+```kotlin
+// Web
+import market.femi.api.RustFfiBundle
+
+// Initialize the WASM module (decodes base64 and instantiates)
+RustFfiBundle.init()
+
+// Call API
+val image = RustFfi.wasmFlux2Pro(user, password, prompt)
+```
+
+## API Reference
+
+### AI Endpoints
+All AI endpoints follow a similar signature:
+*   **Inputs**: `user`, `password`, `prompt` (or image/audio bytes), `cancel_flag` (native only).
+*   **Output**: `uint8_t*` (native) or `Uint8Array` (Wasm) containing the result bytes.
+*   **Cancellation**: On native platforms, pass a pointer to a `uint8_t` flag. Setting it to `1` cancels the operation, returning a fallback image/video.
+
+| Function | Description |
+| :--- | :--- |
+| `rust_ffi_z_image_turbo` | Text-to-Image |
+| `rust_ffi_flux2_pro` | Text-to-Image (Flux Pro) |
+| `rust_ffi_flux2_dev_i2i` | Image-to-Image (Flux Dev) |
+| `rust_ffi_flux2_klein_i2i` | Image-to-Image (Flux Klein, 2 images) |
+| `rust_ffi_nano_banana2` | Text-to-Image (Nano Banana) |
+| `rust_ffi_ltx2_3a2v` | Image+Audio-to-Video |
+| `rust_ffi_qwen3_asr_flash` | Audio-to-Text (Lyrics) |
+| `rust_ffi_qwen3_6_35b_a3b` | Chat (LLM) |
+
+### Project Service (XMP)
+Rust owns the file system. All paths are relative to the app's Documents directory.
+
+| Function | Description |
+| :--- | :--- |
+| `psxmp_save_file` | Save file with optional XMP metadata (prompt, model, subjects). |
+| `psxmp_save_audio` | Save audio file (replaces any existing audio). |
+| `psxmp_like` | Set rating (like/unlike) via XMP. |
+| `psxmp_get_all_generations` | List all files in Documents. |
+| `psxmp_get_audio` | Get the current audio file name. |
+| `psxmp_get_prompt` | Read prompt from XMP. |
+| `psxmp_get_model` | Read model name from XMP. |
+| `psxmp_get_subject` | Read subjects from XMP. |
+| `psxmp_get_like` | Check if file is liked. |
+| `psxmp_get_url` | Get full path for a filename. |
+| `psxmp_set_character_cast` | Set in-memory character cast (A -> B). |
+| `psxmp_set_image_edit` | Set in-memory image edit target. |
+
+### ID3
+| Function | Description |
+| :--- | :--- |
+| `id3_ffi_extract_sylt` | Extract synchronized lyrics from MP3 bytes. Returns JSON array. |
 
 ## Testing
 
 ### Rust Tests
-Run with `cargo test` inside `Rust/`. Tests require a funded test account on the server.
--   `Rust/tests/api_tests.rs`: Shared helpers.
--   `Rust/tests/xmpkit_body.rs`: Unit tests for the shared XMP logic.
+Run native integration tests against the live API:
+```bash
+cd Rust
+cargo test
+```
+*Note: Tests create a temporary user account on the server. Ensure you have network access.*
 
 ### Swift Tests
-Run in Xcode or via `swift test`.
--   `Tests/ApiTests/`: Integration tests for the Swift API.
--   Uses `TestAssets` for fallback images/videos.
+Run via Xcode or `swift test`. Tests use `Bundle.module` resources for fallback assets.
+
+### Android Tests
+Run via Android Studio or Gradle. Tests use the JNI bindings.
 
 ## Non-Obvious Conventions
 
-1.  **Memory Management**: FFI functions return heap-allocated `uint8_t*`. The caller **must** free this memory using `free()` (C) or the equivalent in Swift/Kotlin. The Swift wrapper uses `Data(bytesNoCopy:count:deallocator:)` to handle this automatically.
-2.  **Cancellation**: The `cancel_flag` is a pointer to an `AtomicU8`. The Rust side polls this flag every 10ms. Setting the byte to `1` triggers a graceful shutdown, returning a fallback asset (image/video/text) instead of the result.
-3.  **WebAssembly Inlining**: The Web build process modifies the `wasm-bindgen` output to embed the `.wasm` binary directly into the JS file as base64. This eliminates the need for a separate `.wasm` file download at runtime.
-4.  **XMP Namespaces**: The project uses specific namespaces for AI metadata:
-    -   `dc:description`: Prompt text.
-    -   `iptc4xmpext:AIPromptInformation`: Prompt text (duplicate).
-    -   `xmp:CreatorTool`: Model name.
-    -   `iptc4xmpext:AISystemUsed`: Model name (duplicate).
-    -   `dc:subject`: Subject tags.
-    -   `xmp:Rating`: Like status (1-5 for liked, 0 for unliked).
+1.  **Memory Ownership**:
+    *   **Native**: The Rust FFI functions return a `*mut u8` allocated with `Box::into_raw`. The caller **must** free this memory using `free()` (Swift) or `Box::from_raw` (Kotlin/JNI). The `out_len` parameter is filled with the byte count.
+    *   **Wasm**: Returns `Uint8Array` or `String`. Memory is managed by the JS runtime.
+
+2.  **Cancellation**:
+    *   Native functions accept a `cancel_flag: *const u8`. This is a pointer to a shared memory location. The Rust code polls this flag every 10ms. If set to non-zero, it aborts the async task and returns a fallback asset.
+    *   Swift/Kotlin wrappers use `withTaskCancellationHandler` to set this flag when the Swift `Task` is cancelled.
+
+3.  **WASM Inlining**:
+    *   The `build-rust.sh` script inlines the `.wasm` binary into the `rust_ffi.js` glue code as a base64 string. This eliminates the need to serve a separate `.wasm` file.
+    *   The JS module is then base64-encoded again and embedded into `RustFfiBundle.kt` for Kotlin Multiplatform Web.
+
+4.  **XMP Metadata**:
+    *   **Apple**: Uses `xmp_toolkit`'s smart handler, which preserves existing XMP data and updates only specific fields.
+    *   **Android/WASM**: Uses a pure Rust byte-manipulation approach (`xmpkit_body`) to embed XMP into the file bytes without external dependencies.
+
+5.  **Fallback Assets**:
+    *   If an API call fails (network error, 402 payment required, etc.), the Rust code returns embedded fallback assets (`fallback.png`, `topup.jpg`, `could-not-generate.mp4`) instead of empty data. This ensures the UI always has something to display.
