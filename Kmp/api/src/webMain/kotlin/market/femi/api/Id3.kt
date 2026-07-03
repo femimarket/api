@@ -2,6 +2,9 @@
 
 package market.femi.api
 
+import kotlin.js.JsAny
+import kotlin.js.js
+
 /// Reads the first SYLT (synchronised lyrics) frame from MP3 `bytes` and returns
 /// the timed lines as a JSON array string ("[]" when there are none).
 actual suspend fun extractSylt(bytes: ByteArray): String {

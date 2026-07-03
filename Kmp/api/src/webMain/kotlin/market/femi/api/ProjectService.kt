@@ -3,8 +3,13 @@
 package market.femi.api
 
 import kotlinx.coroutines.await
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlin.js.JsAny
+import kotlin.js.JsBoolean
+import kotlin.js.JsString
+import kotlin.js.js
+import kotlin.js.toBoolean
+import kotlin.js.toJsString
 
 /// Thin passthrough to the Rust wasm-bindgen exports. Rust owns OPFS I/O
 /// and all metadata handling.
