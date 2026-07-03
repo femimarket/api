@@ -20,13 +20,21 @@ external interface RustFfiModule : JsAny {
     fun wasm_qwen3_asr_flash(user: String, pass: String, audioB64: String): Promise<JsString>
     fun wasm_qwen3_6_35b_a3b(user: String, pass: String, messagesJson: String): Promise<JsString>
     fun extract_sylt(bytes: JsAny): JsString
-    fun psxmp_embed(path: String, prompt: String?, model: String?, subjects: JsAny): Promise<JsNumber>
-    fun psxmp_read_prompt(path: String): Promise<JsString?>
-    fun psxmp_read_model(path: String): Promise<JsString?>
-    fun psxmp_read_subject_count(path: String): Promise<JsNumber>
-    fun psxmp_read_subject_at(path: String, index: Int): Promise<JsString?>
-    fun psxmp_set_rating(path: String, rating: Int): Promise<JsNumber>
-    fun psxmp_read_rating(path: String): Promise<JsNumber>
+    fun psxmp_save_file(name: String, bytes: JsAny, prompt: String?, model: String?, subjects: JsAny): Promise<JsAny?>
+    fun psxmp_save_audio(name: String, bytes: JsAny): Promise<JsAny?>
+    fun psxmp_like(file: String, liked: Boolean): Promise<JsAny?>
+    fun psxmp_get_all_generations(): Promise<JsString>
+    fun psxmp_get_audio(): Promise<JsString?>
+    fun psxmp_get_prompt(file: String): Promise<JsString?>
+    fun psxmp_get_model(file: String): Promise<JsString?>
+    fun psxmp_get_subject(file: String): Promise<JsString?>
+    fun psxmp_get_like(file: String): Promise<JsBoolean>
+    fun psxmp_set_character_cast(a: String, b: String)
+    fun psxmp_get_character_cast(): JsString?
+    fun psxmp_clear_character_cast()
+    fun psxmp_set_image_edit(file: String)
+    fun psxmp_get_image_edit(): JsString?
+    fun psxmp_clear_image_edit()
 }
 
 private var cached: Promise<RustFfiModule>? = null

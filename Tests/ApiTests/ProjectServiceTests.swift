@@ -297,13 +297,12 @@ struct ProjectServiceTests {
     private let iptcExtNS = "http://iptc.org/std/Iptc4xmpExt/2008-02-29/"
 
     private func rawXMPProperty(file: String, ns: String, name: String) -> String? {
-        let url = ProjectService.getUrl(for: file)
         var buf = [CChar](repeating: 0, count: 8192)
-        let written = url.path.withCString { path in
+        let written = file.withCString { filePtr in
             ns.withCString { nsPtr in
                 name.withCString { namePtr in
                     buf.withUnsafeMutableBufferPointer { bufPtr in
-                        psxmp_read_property(path, nsPtr, namePtr, bufPtr.baseAddress, Int32(bufPtr.count))
+                        psxmp_read_property(filePtr, nsPtr, namePtr, bufPtr.baseAddress, Int32(bufPtr.count))
                     }
                 }
             }

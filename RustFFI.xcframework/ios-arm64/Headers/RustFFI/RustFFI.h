@@ -63,25 +63,25 @@ uint8_t *rust_ffi_ltx2_3a2v(const char *user,
                             const uint8_t *cancel_flag,
                             size_t *out_len);
 
-// ---------- ProjectService XMP FFI ----------
+// ---------- ProjectService FFI (Rust owns Documents/; every call takes a filename) ----------
 
-int psxmp_embed(const char *path,
-                const char *prompt,
-                const char *model,
-                const char *const *subject,
-                int subject_count);
-
-int psxmp_read_prompt(const char *path, char *buf, int buf_len);
-int psxmp_read_model(const char *path, char *buf, int buf_len);
-int psxmp_read_subject_count(const char *path);
-int psxmp_read_subject_at(const char *path, int index, char *buf, int buf_len);
-int psxmp_set_rating(const char *path, int rating);
-int psxmp_read_rating(const char *path);
-int psxmp_read_property(const char *path,
-                        const char *namespace_uri,
-                        const char *property_name,
-                        char *buf,
-                        int buf_len);
+void    psxmp_save_file(const char *name, const uint8_t *bytes, size_t len, const char *prompt, const char *model, const char *const *subject, int32_t subject_count);
+void    psxmp_save_audio(const char *name, const uint8_t *bytes, size_t len);
+void    psxmp_like(const char *file, int32_t liked);
+int32_t psxmp_get_all_generations(char *buf, int32_t buf_len);
+int32_t psxmp_get_audio(char *buf, int32_t buf_len);
+int32_t psxmp_get_prompt(const char *file, char *buf, int32_t buf_len);
+int32_t psxmp_get_model(const char *file, char *buf, int32_t buf_len);
+int32_t psxmp_get_subject(const char *file, char *buf, int32_t buf_len);
+int32_t psxmp_get_like(const char *file);
+int32_t psxmp_read_property(const char *file, const char *ns, const char *name, char *buf, int32_t buf_len);
+int32_t psxmp_get_url(const char *file, char *buf, int32_t buf_len);
+void    psxmp_set_character_cast(const char *a, const char *b);
+int32_t psxmp_get_character_cast(char *buf, int32_t buf_len);
+void    psxmp_clear_character_cast(void);
+void    psxmp_set_image_edit(const char *file);
+int32_t psxmp_get_image_edit(char *buf, int32_t buf_len);
+void    psxmp_clear_image_edit(void);
 
 // ---------- ID3 SYLT FFI ----------
 

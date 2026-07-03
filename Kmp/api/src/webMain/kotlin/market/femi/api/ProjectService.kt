@@ -3,96 +3,72 @@
 package market.femi.api
 
 import kotlinx.coroutines.await
-import kotlin.js.Promise
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
-private val AUDIO_EXTS = setOf("mp3", "m4a", "wav", "aac", "caf", "aiff", "aif", "flac", "ogg", "opus")
-
+/// Thin passthrough to the Rust wasm-bindgen exports. Rust owns OPFS I/O
+/// and all metadata handling.
 actual object ProjectService {
-    /// OPFS is a per-origin flat namespace — treat all files as living directly
-    /// under the origin root.
-    actual var documents: String = ""
-
     actual suspend fun saveFile(data: ByteArray, named: String, prompt: String?, model: String?, subject: List<String>?) {
-        opfsWrite(named, data)
-        if (prompt != null || model != null || subject != null) {
-            rustFfi().psxmp_embed(named, prompt, model, (subject ?: emptyList()).toJsArray()).await<JsNumber>()
-        }
+        rustFfi().psxmp_save_file(named, data.toUint8Array(), prompt, model, (subject ?: emptyList()).toJsArray()).await<JsAny?>()
+    }
+
+    actual suspend fun saveAudio(data: ByteArray, named: String) {
+        rustFfi().psxmp_save_audio(named, data.toUint8Array()).await<JsAny?>()
     }
 
     actual suspend fun like(file: String, liked: Boolean) {
-        rustFfi().psxmp_set_rating(file, if (liked) 5 else 0).await<JsNumber>()
+        rustFfi().psxmp_like(file, liked).await<JsAny?>()
     }
 
-    actual suspend fun getAllGenerations(): List<String> = opfsListNames()
-
-    actual suspend fun saveAudio(data: ByteArray, named: String) {
-        getAllGenerations().filter(::isAudio).forEach { opfsDelete(it) }
-        opfsWrite(named, data)
+    actual suspend fun getAllGenerations(): List<String> {
+        val json = rustFfi().psxmp_get_all_generations().await<JsString>().toString()
+        return if (json.isEmpty()) emptyList() else Json.decodeFromString<List<String>>(json)
     }
 
-    actual suspend fun getAudio(): String? = getAllGenerations().firstOrNull(::isAudio)
+    actual suspend fun getAudio(): String? =
+        rustFfi().psxmp_get_audio().await<JsString?>()?.toString()
 
     actual suspend fun getPrompt(file: String): String? =
-        rustFfi().psxmp_read_prompt(file).await<JsString?>()?.toString()?.takeIf { it.isNotEmpty() }
+        rustFfi().psxmp_get_prompt(file).await<JsString?>()?.toString()
 
     actual suspend fun getModel(file: String): String? =
-        rustFfi().psxmp_read_model(file).await<JsString?>()?.toString()?.takeIf { it.isNotEmpty() }
+        rustFfi().psxmp_get_model(file).await<JsString?>()?.toString()
 
     actual suspend fun getSubject(file: String): List<String>? {
-        val count = rustFfi().psxmp_read_subject_count(file).await<JsNumber>().toInt()
-        if (count <= 0) return null
-        val list = mutableListOf<String>()
-        for (i in 0 until count) {
-            rustFfi().psxmp_read_subject_at(file, i).await<JsString?>()?.toString()?.let { list.add(it) }
-        }
-        return list.ifEmpty { null }
+        val json = rustFfi().psxmp_get_subject(file).await<JsString?>()?.toString() ?: return null
+        return if (json.isEmpty()) null else Json.decodeFromString<List<String>>(json)
     }
 
     actual suspend fun getLike(file: String): Boolean =
-        rustFfi().psxmp_read_rating(file).await<JsNumber>().toInt() in 1..5
+        rustFfi().psxmp_get_like(file).await<JsBoolean>().toBoolean()
 
-    actual fun getUrl(file: String): String = file
+    actual suspend fun getUrl(file: String): String = file
 
-    // In-memory operation state (process lifetime).
+    actual suspend fun setCharacterCast(a: String, b: String) {
+        rustFfi().psxmp_set_character_cast(a, b)
+    }
 
-    private var characterCast: Pair<String, String>? = null
-    actual fun setCharacterCast(a: String, b: String) { characterCast = a to b }
-    actual fun getCharacterCast(): Pair<String, String>? = characterCast
-    actual fun clearCharacterCast() { characterCast = null }
+    actual suspend fun getCharacterCast(): Pair<String, String>? {
+        val json = rustFfi().psxmp_get_character_cast()?.toString() ?: return null
+        val parts = Json.decodeFromString<List<String>>(json)
+        return if (parts.size == 2) parts[0] to parts[1] else null
+    }
 
-    private var imageEdit: String? = null
-    actual fun setImageEdit(file: String) { imageEdit = file }
-    actual fun getImageEdit(): String? = imageEdit
-    actual fun clearImageEdit() { imageEdit = null }
-}
+    actual suspend fun clearCharacterCast() {
+        rustFfi().psxmp_clear_character_cast()
+    }
 
-// ---------- OPFS interop (Kotlin/wasm-js) ----------
+    actual suspend fun setImageEdit(file: String) {
+        rustFfi().psxmp_set_image_edit(file)
+    }
 
-private fun opfsRootPromise(): Promise<JsAny> = js("navigator.storage.getDirectory()")
-private fun opfsWriteJs(root: JsAny, name: String, bytes: JsAny): Promise<JsAny?> = js(
-    "root.getFileHandle(name, { create: true }).then(h => h.createWritable()).then(w => w.write(bytes).then(() => w.close()))"
-)
-private fun opfsDeleteJs(root: JsAny, name: String): Promise<JsAny?> = js("root.removeEntry(name).catch(() => null)")
-private fun opfsListJs(root: JsAny): Promise<JsAny> = js(
-    "(function(){var out=[];var it=root.keys();function step(){return it.next().then(function(r){if(r.done)return out;out.push(r.value);return step();});}return step();})()"
-)
-private fun jsArrayLength(arr: JsAny): Int = js("arr.length")
-private fun jsArrayGetString(arr: JsAny, index: Int): String = js("arr[index]")
+    actual suspend fun getImageEdit(): String? =
+        rustFfi().psxmp_get_image_edit()?.toString()
 
-private suspend fun opfsRoot(): JsAny = opfsRootPromise().await<JsAny>()
-
-private suspend fun opfsWrite(name: String, bytes: ByteArray) {
-    opfsWriteJs(opfsRoot(), name, bytes.toUint8Array()).await<JsAny?>()
-}
-
-private suspend fun opfsDelete(name: String) {
-    opfsDeleteJs(opfsRoot(), name).await<JsAny?>()
-}
-
-private suspend fun opfsListNames(): List<String> {
-    val arr = opfsListJs(opfsRoot()).await<JsAny>()
-    val n = jsArrayLength(arr)
-    return List(n) { jsArrayGetString(arr, it) }
+    actual suspend fun clearImageEdit() {
+        rustFfi().psxmp_clear_image_edit()
+    }
 }
 
 // ---------- JS interop helpers ----------
@@ -113,11 +89,3 @@ private fun List<String>.toJsArray(): JsAny {
     for (s in this) arrayPush(a, s.toJsString())
     return a
 }
-
-private fun pathExtension(path: String): String {
-    val dot = path.lastIndexOf('.')
-    return if (dot < 0 || dot == path.length - 1) "" else path.substring(dot + 1)
-}
-
-private fun isAudio(path: String): Boolean =
-    AUDIO_EXTS.contains(pathExtension(path).lowercase())

@@ -695,21 +695,37 @@ export function namespace_prefix(ns: Namespace): string;
  */
 export function namespace_uri(ns: Namespace): string;
 
-export function psxmp_embed(path: string, prompt: string | null | undefined, model: string | null | undefined, subjects: string[]): Promise<number>;
+export function psxmp_clear_character_cast(): void;
 
-export function psxmp_read_model(path: string): Promise<string | undefined>;
+export function psxmp_clear_image_edit(): void;
 
-export function psxmp_read_prompt(path: string): Promise<string | undefined>;
+export function psxmp_get_all_generations(): Promise<string>;
 
-export function psxmp_read_property(path: string, namespace_uri: string, property_name: string): Promise<string | undefined>;
+export function psxmp_get_audio(): Promise<string | undefined>;
 
-export function psxmp_read_rating(path: string): Promise<number>;
+export function psxmp_get_character_cast(): string | undefined;
 
-export function psxmp_read_subject_at(path: string, index: number): Promise<string | undefined>;
+export function psxmp_get_image_edit(): string | undefined;
 
-export function psxmp_read_subject_count(path: string): Promise<number>;
+export function psxmp_get_like(file: string): Promise<boolean>;
 
-export function psxmp_set_rating(path: string, rating: number): Promise<number>;
+export function psxmp_get_model(file: string): Promise<string | undefined>;
+
+export function psxmp_get_prompt(file: string): Promise<string | undefined>;
+
+export function psxmp_get_subject(file: string): Promise<string | undefined>;
+
+export function psxmp_get_url(file: string): string;
+
+export function psxmp_like(file: string, liked: boolean): Promise<void>;
+
+export function psxmp_save_audio(name: string, bytes: Uint8Array): Promise<void>;
+
+export function psxmp_save_file(name: string, bytes: Uint8Array, prompt: string | null | undefined, model: string | null | undefined, subjects: string[]): Promise<void>;
+
+export function psxmp_set_character_cast(a: string, b: string): void;
+
+export function psxmp_set_image_edit(file: string): void;
 
 /**
  * Register a namespace URI with a prefix
@@ -748,14 +764,22 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly extract_sylt: (a: number, b: number, c: number) => void;
-    readonly psxmp_embed: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
-    readonly psxmp_read_model: (a: number, b: number) => number;
-    readonly psxmp_read_prompt: (a: number, b: number) => number;
-    readonly psxmp_read_property: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly psxmp_read_rating: (a: number, b: number) => number;
-    readonly psxmp_read_subject_at: (a: number, b: number, c: number) => number;
-    readonly psxmp_read_subject_count: (a: number, b: number) => number;
-    readonly psxmp_set_rating: (a: number, b: number, c: number) => number;
+    readonly psxmp_clear_character_cast: () => void;
+    readonly psxmp_clear_image_edit: () => void;
+    readonly psxmp_get_all_generations: () => number;
+    readonly psxmp_get_audio: () => number;
+    readonly psxmp_get_character_cast: (a: number) => void;
+    readonly psxmp_get_image_edit: (a: number) => void;
+    readonly psxmp_get_like: (a: number, b: number) => number;
+    readonly psxmp_get_model: (a: number, b: number) => number;
+    readonly psxmp_get_prompt: (a: number, b: number) => number;
+    readonly psxmp_get_subject: (a: number, b: number) => number;
+    readonly psxmp_get_url: (a: number, b: number, c: number) => void;
+    readonly psxmp_like: (a: number, b: number, c: number) => number;
+    readonly psxmp_save_audio: (a: number, b: number, c: number, d: number) => number;
+    readonly psxmp_save_file: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly psxmp_set_character_cast: (a: number, b: number, c: number, d: number) => void;
+    readonly psxmp_set_image_edit: (a: number, b: number) => void;
     readonly wasm_flux2_dev_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
     readonly wasm_flux2_klein_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
     readonly wasm_flux2_pro: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
@@ -842,9 +866,9 @@ export interface InitOutput {
     readonly xmpvalue_integer: (a: bigint) => number;
     readonly xmpvalue_kind: (a: number) => number;
     readonly xmpvalue_string: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_2809: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_2822: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_763: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_2858: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_2871: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_812: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

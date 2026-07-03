@@ -1,11 +1,10 @@
-//! ProjectService XMP FFI. Every platform's `psxmp_*` takes a path.
-//!
-//! Split into 4 modules:
+//! ProjectService XMP FFI. Rust owns the Documents root; every call takes
+//! a filename, never a path.
 //!
 //! - `shared` — namespace constants + `xmpkit_body` (bytes-based XMP logic
 //!    used by both Android and WASM).
-//! - `apple` — `xmp_toolkit` path API (full smart-handler set). Exposed to
-//!    Swift via the C ABI defined below.
+//! - `apple` — `xmp_toolkit` smart-handler API + `dirs::document_dir()`.
+//!    Exposed to Swift via the C ABI defined below.
 //! - `android` — inlines OS reads/writes + `xmpkit_body`; exposes JNI symbols
 //!    directly to `ProjectServiceJvm.kt` (no C ABI on Android).
 //! - `wasm` — inlines OPFS reads/writes + `xmpkit_body`; exposes wasm-bindgen
@@ -50,14 +49,16 @@ unsafe fn write_str(buf: *mut c_char, buf_len: c_int, s: &str) -> c_int {
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_embed(
-    path: *const c_char,
+pub unsafe extern "C" fn psxmp_save_file(
+    name: *const c_char,
+    bytes: *const u8, len: usize,
     prompt: *const c_char,
     model: *const c_char,
-    subject: *const *const c_char,
-    subject_count: c_int,
-) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
+    subject: *const *const c_char, subject_count: c_int,
+) {
+    let Some(n) = cstr(name) else { return };
+    if bytes.is_null() { return }
+    let data = std::slice::from_raw_parts(bytes, len);
     let pr = cstr(prompt);
     let md = cstr(model);
     let mut items: Vec<&str> = Vec::new();
@@ -66,43 +67,36 @@ pub unsafe extern "C" fn psxmp_embed(
             if let Some(s) = cstr(*subject.add(i as usize)) { items.push(s); }
         }
     }
-    backend::embed(p, pr, md, &items)
+    backend::save_file(n, data, pr, md, &items);
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_read_prompt(path: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    match backend::read_prompt(p) {
-        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
-        _ => 0,
-    }
+pub unsafe extern "C" fn psxmp_save_audio(name: *const c_char, bytes: *const u8, len: usize) {
+    let Some(n) = cstr(name) else { return };
+    if bytes.is_null() { return }
+    let data = std::slice::from_raw_parts(bytes, len);
+    backend::save_audio(n, data);
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_read_model(path: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    match backend::read_model(p) {
-        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
-        _ => 0,
-    }
+pub unsafe extern "C" fn psxmp_like(file: *const c_char, liked: c_int) {
+    let Some(f) = cstr(file) else { return };
+    backend::like(f, liked != 0);
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_read_subject_count(path: *const c_char) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    backend::read_subject_count(p)
+pub unsafe extern "C" fn psxmp_get_all_generations(buf: *mut c_char, buf_len: c_int) -> c_int {
+    let json = serde_json::to_string(&backend::list_generations()).unwrap();
+    write_str(buf, buf_len, &json)
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_read_subject_at(
-    path: *const c_char, index: c_int, buf: *mut c_char, buf_len: c_int,
-) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    match backend::read_subject_at(p, index) {
+pub unsafe extern "C" fn psxmp_get_audio(buf: *mut c_char, buf_len: c_int) -> c_int {
+    match backend::get_audio() {
         Some(s) => write_str(buf, buf_len, &s),
         None => 0,
     }
@@ -110,33 +104,104 @@ pub unsafe extern "C" fn psxmp_read_subject_at(
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 #[no_mangle]
-pub unsafe extern "C" fn psxmp_set_rating(path: *const c_char, rating: c_int) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    backend::set_rating(p, rating)
-}
-
-#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
-#[no_mangle]
-pub unsafe extern "C" fn psxmp_read_rating(path: *const c_char) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    backend::read_rating(p)
-}
-
-#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
-#[no_mangle]
-pub unsafe extern "C" fn psxmp_read_property(
-    path: *const c_char,
-    namespace_uri: *const c_char,
-    property_name: *const c_char,
-    buf: *mut c_char,
-    buf_len: c_int,
-) -> c_int {
-    let Some(p) = cstr(path) else { return -1 };
-    let Some(ns) = cstr(namespace_uri) else { return -1 };
-    let Some(name) = cstr(property_name) else { return -1 };
-    match backend::read_property(p, ns, name) {
+pub unsafe extern "C" fn psxmp_get_prompt(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    match backend::get_prompt(f) {
         Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
         _ => 0,
     }
 }
 
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_model(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    match backend::get_model(f) {
+        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
+        _ => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_subject(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    let items = backend::get_subject(f);
+    if items.is_empty() { return 0; }
+    let json = serde_json::to_string(&items).unwrap();
+    write_str(buf, buf_len, &json)
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_read_property(
+    file: *const c_char, ns: *const c_char, name: *const c_char,
+    buf: *mut c_char, buf_len: c_int,
+) -> c_int {
+    let (Some(f), Some(n), Some(nm)) = (cstr(file), cstr(ns), cstr(name)) else { return -1 };
+    match backend::read_property(f, n, nm) {
+        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
+        _ => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_like(file: *const c_char) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    if backend::get_like(f) { 1 } else { 0 }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_url(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    write_str(buf, buf_len, &backend::get_url(f))
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_set_character_cast(a: *const c_char, b: *const c_char) {
+    let (Some(a), Some(b)) = (cstr(a), cstr(b)) else { return };
+    backend::set_character_cast(a, b);
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_character_cast(buf: *mut c_char, buf_len: c_int) -> c_int {
+    match backend::get_character_cast() {
+        Some((a, b)) => {
+            let json = serde_json::to_string(&[a, b]).unwrap();
+            write_str(buf, buf_len, &json)
+        }
+        None => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_clear_character_cast() {
+    backend::clear_character_cast();
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_set_image_edit(file: *const c_char) {
+    let Some(f) = cstr(file) else { return };
+    backend::set_image_edit(f);
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_image_edit(buf: *mut c_char, buf_len: c_int) -> c_int {
+    match backend::get_image_edit() {
+        Some(s) => write_str(buf, buf_len, &s),
+        None => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_clear_image_edit() {
+    backend::clear_image_edit();
+}

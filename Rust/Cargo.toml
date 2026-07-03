@@ -41,6 +41,7 @@ xmpkit = { version = "0.1.4", default-features = false, features = ["wasm", "png
 
 [target.'cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))'.dependencies]
 xmp_toolkit = "1"
+dirs = "5"
 
 [profile.release]
 lto = true
