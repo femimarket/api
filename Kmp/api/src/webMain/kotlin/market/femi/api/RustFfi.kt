@@ -51,7 +51,7 @@ private fun loadRustFfi(b64: String): Promise<RustFfiModule> = js("""
 (function(){
   var code = atob(b64);
   var url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
-  return import(url).then(function(m){ return m.default().then(function(){ return m; }); });
+  return import(/* webpackIgnore: true */ url).then(function(m){ return m.default().then(function(){ return m; }); });
 })()
 """)
 
