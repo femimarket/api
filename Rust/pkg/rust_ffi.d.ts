@@ -866,9 +866,9 @@ export interface InitOutput {
     readonly xmpvalue_integer: (a: bigint) => number;
     readonly xmpvalue_kind: (a: number) => number;
     readonly xmpvalue_string: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_2858: (a: number, b: number, c: number, d: number) => void;
     readonly __wasm_bindgen_func_elem_2871: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_812: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_2884: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_824: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

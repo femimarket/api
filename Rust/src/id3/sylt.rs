@@ -15,8 +15,9 @@ struct Line {
 /// Read the first SYLT (synchronised lyrics) frame from MP3 bytes and return the
 /// timed lines as a JSON array string ("[]" when there are none).
 ///
-/// Port of Generate2/LyricExtractor.swift: skip blank lines, duration =
-/// next.start − this.start, and number the surviving lines sequentially.
+/// Port of Generate2/LyricExtractor.swift: SYLT timestamps are per-WORD; split
+/// each word's text on `\n` to close lines, join words in a line with a space,
+/// then duration = next.start − this.start.
 pub(crate) fn core_extract_sylt(bytes: &[u8]) -> String {
     let lines = read_lines(bytes).unwrap_or_default();
     serde_json::to_string(&lines).unwrap_or_else(|_| "[]".to_owned())
@@ -25,32 +26,58 @@ pub(crate) fn core_extract_sylt(bytes: &[u8]) -> String {
 fn read_lines(bytes: &[u8]) -> Option<Vec<Line>> {
     let tag = Tag::read_from2(Cursor::new(bytes)).ok()?;
     let sync = tag.synchronised_lyrics().next()?;
-    let raw = &sync.content; // Vec<(timestamp_ms, text)>
+    let raw = &sync.content; // Vec<(word_start_ms, word_text)>
     if raw.is_empty() {
         return None;
     }
 
-    let mut out = Vec::new();
-    let mut visible_index = 0;
-    for i in 0..raw.len() {
-        let (time, text) = &raw[i];
-        if text.is_empty() {
-            continue;
-        }
-        let start_ms = i64::from(*time);
-        let end_ms = if i + 1 < raw.len() {
-            i64::from(raw[i + 1].0)
-        } else {
-            start_ms
-        };
-        out.push(Line {
-            index: visible_index,
-            text: text.clone(),
-            start_ms,
-            duration_ms: (end_ms - start_ms).max(0),
-        });
-        visible_index += 1;
+    struct Pending {
+        start_ms: i64,
+        words: Vec<String>,
     }
+    let mut lines: Vec<(i64, String)> = Vec::new();
+    let mut pending: Option<Pending> = None;
+
+    for (time, text) in raw {
+        let word_start_ms = i64::from(*time);
+        let parts: Vec<&str> = text.split('\n').collect();
+        for (i, part) in parts.iter().enumerate() {
+            let token = part.trim();
+            if !token.is_empty() {
+                let p = pending.get_or_insert(Pending { start_ms: word_start_ms, words: Vec::new() });
+                p.words.push(token.to_owned());
+            }
+            if i < parts.len() - 1 {
+                if let Some(p) = pending.take() {
+                    if !p.words.is_empty() {
+                        lines.push((p.start_ms, p.words.join(" ")));
+                    }
+                }
+            }
+        }
+    }
+    if let Some(p) = pending.take() {
+        if !p.words.is_empty() {
+            lines.push((p.start_ms, p.words.join(" ")));
+        }
+    }
+
+    if lines.is_empty() {
+        return None;
+    }
+
+    let out = (0..lines.len())
+        .map(|i| {
+            let (start_ms, text) = &lines[i];
+            let end_ms = if i + 1 < lines.len() { lines[i + 1].0 } else { *start_ms };
+            Line {
+                index: i as u32,
+                text: text.clone(),
+                start_ms: *start_ms,
+                duration_ms: (end_ms - start_ms).max(0),
+            }
+        })
+        .collect();
     Some(out)
 }
 
