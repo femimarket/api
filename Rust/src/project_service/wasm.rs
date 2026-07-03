@@ -93,7 +93,7 @@ pub async fn psxmp_save_file(
         bytes
     } else {
         let refs: Vec<&str> = subjects.iter().map(|s| s.as_str()).collect();
-        xmpkit_body::embed(&bytes, prompt.as_deref(), model.as_deref(), &refs).unwrap_or(bytes)
+        xmpkit_body::embed(&bytes, prompt.as_deref(), model.as_deref(), &refs)
     };
     let _ = opfs_write(&name, &out).await;
 }
@@ -111,7 +111,7 @@ pub async fn psxmp_save_audio(name: String, bytes: Vec<u8>) {
 #[wasm_bindgen]
 pub async fn psxmp_like(file: String, liked: bool) {
     let Ok(bytes) = opfs_read(&file).await else { return };
-    let Some(out) = xmpkit_body::set_rating(&bytes, if liked { 5 } else { 0 }) else { return };
+    let out = xmpkit_body::set_rating(&bytes, if liked { 5 } else { 0 });
     let _ = opfs_write(&file, &out).await;
 }
 

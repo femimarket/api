@@ -14,6 +14,9 @@ uuid = { version = "1", features = ["v7", "serde", "js"] }
 base64 = "0.22"
 id3 = "1"
 
+[target.'cfg(not(target_os = "ios"))'.dependencies]
+xmpkit = { version = "0.1.4", default-features = false, features = ["wasm", "png", "jpeg", "mpeg4"] }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
@@ -25,7 +28,6 @@ features = ["json"]
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
-xmpkit = { version = "0.1.4", default-features = false, features = ["wasm", "png", "jpeg"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
@@ -37,11 +39,13 @@ web-sys = { version = "0.3", features = [
     "FileSystemGetFileOptions", "FileSystemWritableFileStream",
     "File", "Blob",
 ] }
-xmpkit = { version = "0.1.4", default-features = false, features = ["wasm", "png", "jpeg"] }
 
 [target.'cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))'.dependencies]
 xmp_toolkit = "1"
 dirs = "5"
+
+[dev-dependencies]
+png = "0.17"
 
 [profile.release]
 lto = true

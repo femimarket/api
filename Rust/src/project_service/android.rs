@@ -92,7 +92,7 @@ pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpSaveFile<'l>(
         data
     } else {
         let refs: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
-        xmpkit_body::embed(&data, pr.as_deref(), md.as_deref(), &refs).unwrap_or(data)
+        xmpkit_body::embed(&data, pr.as_deref(), md.as_deref(), &refs)
     };
     let _ = fs::write(&path, bytes_out);
 }
@@ -118,7 +118,7 @@ pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpLike<'l>(
 ) {
     let Some(f) = jstr(&mut env, file) else { return };
     let Ok(data) = fs::read(full_path(&f)) else { return };
-    let Some(out) = xmpkit_body::set_rating(&data, if liked != 0 { 5 } else { 0 }) else { return };
+    let out = xmpkit_body::set_rating(&data, if liked != 0 { 5 } else { 0 });
     let _ = fs::write(full_path(&f), out);
 }
 

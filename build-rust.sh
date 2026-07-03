@@ -22,9 +22,7 @@ cd "$ROOT/Rust"
 APPLE_TARGETS=(
   aarch64-apple-ios
   aarch64-apple-ios-sim
-  x86_64-apple-ios
   aarch64-apple-darwin
-  x86_64-apple-darwin
 )
 
 ANDROID_PAIRS=(
@@ -50,23 +48,11 @@ for t in "${APPLE_TARGETS[@]}"; do
   cargo build --release --target "$t"
 done
 
-mkdir -p target/ios-sim-universal/release
-lipo -create \
-  target/aarch64-apple-ios-sim/release/librust_ffi.a \
-  target/x86_64-apple-ios/release/librust_ffi.a \
-  -output target/ios-sim-universal/release/librust_ffi.a
-
-mkdir -p target/macos-universal/release
-lipo -create \
-  target/aarch64-apple-darwin/release/librust_ffi.a \
-  target/x86_64-apple-darwin/release/librust_ffi.a \
-  -output target/macos-universal/release/librust_ffi.a
-
 rm -rf "$ROOT/RustFFI.xcframework"
 xcodebuild -create-xcframework \
   -library target/aarch64-apple-ios/release/librust_ffi.a       -headers include \
-  -library target/ios-sim-universal/release/librust_ffi.a       -headers include \
-  -library target/macos-universal/release/librust_ffi.a         -headers include \
+  -library target/aarch64-apple-ios-sim/release/librust_ffi.a   -headers include \
+  -library target/aarch64-apple-darwin/release/librust_ffi.a    -headers include \
   -output "$ROOT/RustFFI.xcframework"
 
 ########################################

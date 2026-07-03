@@ -12,7 +12,7 @@
 
 #![allow(clippy::missing_safety_doc)]
 
-#[path = "share.rs"] mod shared;
+#[path = "share.rs"] pub mod shared;
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 mod apple;

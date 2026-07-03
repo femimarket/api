@@ -4,7 +4,7 @@ use std::time::Duration;
 
 mod api;
 mod id3;
-mod project_service;
+pub mod project_service;
 
 pub(crate) const URL: &str = "https://femi.market/api";
 
