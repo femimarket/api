@@ -56,6 +56,11 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutinesTest)
         }
+        androidMain.dependencies {
+            // Delivers the runtime Context at process start so the library can
+            // self-configure its documents root (see ProjectServiceInitializer).
+            implementation(libs.androidx.startup.runtime)
+        }
     }
 }
 
