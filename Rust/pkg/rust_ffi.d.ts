@@ -751,6 +751,8 @@ export function wasm_flux2_pro(user: string, password: string, prompt: string): 
 
 export function wasm_ltx2_3a2v(user: string, password: string, image_b64: string, audio_b64: string, prompt: string): Promise<Uint8Array>;
 
+export function wasm_ltx2_3a2v_comfyui(comfy_key: string, image_b64: string, audio_b64: string, prompt: string): Promise<Uint8Array>;
+
 export function wasm_nano_banana2(user: string, password: string, prompt: string): Promise<Uint8Array>;
 
 export function wasm_qwen3_6_35b_a3b(user: string, password: string, messages_json: string): Promise<string>;
@@ -784,6 +786,7 @@ export interface InitOutput {
     readonly wasm_flux2_klein_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
     readonly wasm_flux2_pro: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly wasm_ltx2_3a2v: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly wasm_ltx2_3a2v_comfyui: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
     readonly wasm_nano_banana2: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly wasm_qwen3_6_35b_a3b: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly wasm_qwen3_asr_flash: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
@@ -866,9 +869,10 @@ export interface InitOutput {
     readonly xmpvalue_integer: (a: bigint) => number;
     readonly xmpvalue_kind: (a: number) => number;
     readonly xmpvalue_string: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_2954: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_2967: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_825: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3086: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3091: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_880: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_2199: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

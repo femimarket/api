@@ -21,6 +21,7 @@ external interface RustFfiModule : JsAny {
     fun wasm_flux2_dev_i2i(user: String, pass: String, imageB64: String, prompt: String): Promise<JsAny?>
     fun wasm_flux2_klein_i2i(user: String, pass: String, imageB64: String, image2B64: String, prompt: String): Promise<JsAny?>
     fun wasm_ltx2_3a2v(user: String, pass: String, imageB64: String, audioB64: String, prompt: String): Promise<JsAny?>
+    fun wasm_ltx2_3a2v_comfyui(comfyKey: String, imageB64: String, audioB64: String, prompt: String): Promise<JsAny?>
     fun wasm_qwen3_asr_flash(user: String, pass: String, audioB64: String): Promise<JsString>
     fun wasm_qwen3_6_35b_a3b(user: String, pass: String, messagesJson: String): Promise<JsString>
     fun extract_sylt(bytes: JsAny): JsString

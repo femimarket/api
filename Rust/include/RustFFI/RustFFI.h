@@ -63,6 +63,13 @@ uint8_t *rust_ffi_ltx2_3a2v(const char *user,
                             const uint8_t *cancel_flag,
                             size_t *out_len);
 
+uint8_t *rust_ffi_ltx2_3a2v_comfyui(const char *comfy_key,
+                                    const char *image_b64,
+                                    const char *audio_b64,
+                                    const char *prompt,
+                                    const uint8_t *cancel_flag,
+                                    size_t *out_len);
+
 // ---------- ProjectService FFI (Rust owns Documents/; every call takes a filename) ----------
 
 void    psxmp_save_file(const char *name, const uint8_t *bytes, size_t len, const char *prompt, const char *model, const char *const *subject, int32_t subject_count);
