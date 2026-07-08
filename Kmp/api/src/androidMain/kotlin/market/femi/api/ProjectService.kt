@@ -9,8 +9,8 @@ import kotlinx.serialization.json.Json
 actual object ProjectService {
     fun initDocuments(path: String) = ProjectServiceJvm.psxmpInitDocuments(path)
 
-    actual suspend fun saveFile(data: ByteArray, named: String, prompt: String?, model: String?, subject: List<String>?) =
-        ProjectServiceJvm.psxmpSaveFile(named, data, prompt, model, subject?.toTypedArray())
+    actual suspend fun saveFile(data: ByteArray, named: String, prompt: String?, model: String?, subject: List<String>?, projectName: String?, lyrics: String?, shotNumber: String?) =
+        ProjectServiceJvm.psxmpSaveFile(named, data, prompt, model, subject?.toTypedArray(), projectName, lyrics, shotNumber)
 
     actual suspend fun saveAudio(data: ByteArray, named: String) =
         ProjectServiceJvm.psxmpSaveAudio(named, data)
@@ -22,6 +22,15 @@ actual object ProjectService {
         ProjectServiceJvm.psxmpGetAllGenerations()?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList()
 
     actual suspend fun getAudio(): String? = ProjectServiceJvm.psxmpGetAudio()
+
+    actual suspend fun getProjectName(file: String): String? =
+        ProjectServiceJvm.psxmpGetProjectName(file)?.takeIf { it.isNotEmpty() }
+
+    actual suspend fun getLyrics(file: String): String? =
+        ProjectServiceJvm.psxmpGetLyrics(file)?.takeIf { it.isNotEmpty() }
+
+    actual suspend fun getShotNumber(file: String): String? =
+        ProjectServiceJvm.psxmpGetShotNumber(file)?.takeIf { it.isNotEmpty() }
 
     actual suspend fun getPrompt(file: String): String? =
         ProjectServiceJvm.psxmpGetPrompt(file)?.takeIf { it.isNotEmpty() }

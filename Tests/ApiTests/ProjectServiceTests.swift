@@ -87,6 +87,74 @@ struct ProjectServiceTests {
         #expect(ProjectService.getSubject(file) == nil)
     }
 
+    // MARK: - projectName (xmpDM:projectName) / lyrics (xmpDM:lyrics) / shotNumber (xmpDM:shotNumber)
+
+    private let xmpDMNS = "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
+
+    @Test func saveFileEmbedsProjectName() {
+        let file = name("projectname.png")
+        ProjectService.saveFile(makePNG(), named: file, projectName: "My Song")
+        #expect(ProjectService.getProjectName(file) == "My Song")
+    }
+
+    @Test func saveFileWritesXmpDMProjectName() {
+        let file = name("projectname-raw.png")
+        ProjectService.saveFile(makePNG(), named: file, projectName: "My Song")
+        #expect(rawXMPProperty(file: file, ns: xmpDMNS, name: "projectName") == "My Song")
+    }
+
+    @Test func getProjectNameNilWhenAbsent() {
+        let file = name("no-projectname.png")
+        ProjectService.saveFile(makePNG(), named: file)
+        #expect(ProjectService.getProjectName(file) == nil)
+    }
+
+    @Test func saveFileEmbedsLyrics() {
+        let file = name("lyrics.png")
+        let json = #"[{"index":0,"text":"hello","startMs":0,"endMs":500}]"#
+        ProjectService.saveFile(makePNG(), named: file, lyrics: json)
+        #expect(ProjectService.getLyrics(file) == json)
+    }
+
+    @Test func saveFileWritesXmpDMLyrics() {
+        let file = name("lyrics-raw.png")
+        ProjectService.saveFile(makePNG(), named: file, lyrics: "la la la")
+        #expect(rawXMPProperty(file: file, ns: xmpDMNS, name: "lyrics") == "la la la")
+    }
+
+    @Test func getLyricsNilWhenAbsent() {
+        let file = name("no-lyrics.png")
+        ProjectService.saveFile(makePNG(), named: file)
+        #expect(ProjectService.getLyrics(file) == nil)
+    }
+
+    @Test func saveFileEmbedsShotNumber() {
+        let file = name("shotnumber.png")
+        ProjectService.saveFile(makePNG(), named: file, shotNumber: "1a")
+        #expect(ProjectService.getShotNumber(file) == "1a")
+    }
+
+    @Test func saveFileWritesXmpDMShotNumber() {
+        let file = name("shotnumber-raw.png")
+        ProjectService.saveFile(makePNG(), named: file, shotNumber: "1a")
+        #expect(rawXMPProperty(file: file, ns: xmpDMNS, name: "shotNumber") == "1a")
+    }
+
+    @Test func getShotNumberNilWhenAbsent() {
+        let file = name("no-shotnumber.png")
+        ProjectService.saveFile(makePNG(), named: file)
+        #expect(ProjectService.getShotNumber(file) == nil)
+    }
+
+    @Test func saveFileEmbedsProjectNameLyricsShotNumberInVideo() async {
+        let file = name("dm-all.mp4")
+        let json = #"[{"index":2,"text":"line","startMs":100,"endMs":900}]"#
+        ProjectService.saveFile(await makeMP4(), named: file, projectName: "Vid Project", lyrics: json, shotNumber: "3")
+        #expect(ProjectService.getProjectName(file) == "Vid Project")
+        #expect(ProjectService.getLyrics(file) == json)
+        #expect(ProjectService.getShotNumber(file) == "3")
+    }
+
     // MARK: - saveFile (video, via Adobe XMP Toolkit smart handler)
 
     @Test func saveFileWithoutMetadataWritesVideoBytesUnchanged() async throws {

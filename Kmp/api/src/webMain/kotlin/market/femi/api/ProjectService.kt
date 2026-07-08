@@ -14,8 +14,8 @@ import kotlin.js.toJsString
 /// Thin passthrough to the Rust wasm-bindgen exports. Rust owns OPFS I/O
 /// and all metadata handling.
 actual object ProjectService {
-    actual suspend fun saveFile(data: ByteArray, named: String, prompt: String?, model: String?, subject: List<String>?) {
-        rustFfi().psxmp_save_file(named, data.toUint8Array(), prompt, model, (subject ?: emptyList()).toJsArray()).await<JsAny?>()
+    actual suspend fun saveFile(data: ByteArray, named: String, prompt: String?, model: String?, subject: List<String>?, projectName: String?, lyrics: String?, shotNumber: String?) {
+        rustFfi().psxmp_save_file(named, data.toUint8Array(), prompt, model, (subject ?: emptyList()).toJsArray(), projectName, lyrics, shotNumber).await<JsAny?>()
     }
 
     actual suspend fun saveAudio(data: ByteArray, named: String) {
@@ -33,6 +33,15 @@ actual object ProjectService {
 
     actual suspend fun getAudio(): String? =
         rustFfi().psxmp_get_audio().await<JsString?>()?.toString()
+
+    actual suspend fun getProjectName(file: String): String? =
+        rustFfi().psxmp_get_project_name(file).await<JsString?>()?.toString()
+
+    actual suspend fun getLyrics(file: String): String? =
+        rustFfi().psxmp_get_lyrics(file).await<JsString?>()?.toString()
+
+    actual suspend fun getShotNumber(file: String): String? =
+        rustFfi().psxmp_get_shot_number(file).await<JsString?>()?.toString()
 
     actual suspend fun getPrompt(file: String): String? =
         rustFfi().psxmp_get_prompt(file).await<JsString?>()?.toString()

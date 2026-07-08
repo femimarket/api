@@ -5,12 +5,15 @@ internal object ProjectServiceJvm {
 
     @JvmStatic external fun psxmpInitDocuments(path: String)
 
-    @JvmStatic external fun psxmpSaveFile(name: String, bytes: ByteArray, prompt: String?, model: String?, subject: Array<String>?)
+    @JvmStatic external fun psxmpSaveFile(name: String, bytes: ByteArray, prompt: String?, model: String?, subject: Array<String>?, projectName: String?, lyrics: String?, shotNumber: String?)
     @JvmStatic external fun psxmpSaveAudio(name: String, bytes: ByteArray)
     @JvmStatic external fun psxmpLike(file: String, liked: Int)
 
     @JvmStatic external fun psxmpGetAllGenerations(): String?
     @JvmStatic external fun psxmpGetAudio(): String?
+    @JvmStatic external fun psxmpGetProjectName(file: String): String?
+    @JvmStatic external fun psxmpGetLyrics(file: String): String?
+    @JvmStatic external fun psxmpGetShotNumber(file: String): String?
     @JvmStatic external fun psxmpGetPrompt(file: String): String?
     @JvmStatic external fun psxmpGetModel(file: String): String?
     @JvmStatic external fun psxmpGetSubject(file: String): String?

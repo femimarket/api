@@ -87,13 +87,14 @@ async fn opfs_list() -> Result<Vec<String>, JsValue> {
 #[wasm_bindgen]
 pub async fn psxmp_save_file(
     name: String, bytes: Vec<u8>,
-    prompt: Option<String>, model: Option<String>, subjects: Vec<String>,
+    prompt: Option<String>, model: Option<String>, subjects: Vec<String>, project_name: Option<String>,
+    lyrics: Option<String>, shot_number: Option<String>,
 ) {
-    let out = if prompt.is_none() && model.is_none() && subjects.is_empty() {
+    let out = if project_name.is_none() && prompt.is_none() && model.is_none() && subjects.is_empty() && lyrics.is_none() && shot_number.is_none() {
         bytes
     } else {
         let refs: Vec<&str> = subjects.iter().map(|s| s.as_str()).collect();
-        xmpkit_body::embed(&bytes, prompt.as_deref(), model.as_deref(), &refs)
+        xmpkit_body::embed(&bytes, prompt.as_deref(), model.as_deref(), &refs, project_name.as_deref(), lyrics.as_deref(), shot_number.as_deref())
     };
     let _ = opfs_write(&name, &out).await;
 }
@@ -125,6 +126,24 @@ pub async fn psxmp_get_all_generations() -> String {
 #[wasm_bindgen]
 pub async fn psxmp_get_audio() -> Option<String> {
     opfs_list().await.ok()?.into_iter().find(|n| is_audio(n))
+}
+
+#[wasm_bindgen]
+pub async fn psxmp_get_project_name(file: String) -> Option<String> {
+    let bytes = opfs_read(&file).await.ok()?;
+    xmpkit_body::read_project_name(&bytes).filter(|s| !s.is_empty())
+}
+
+#[wasm_bindgen]
+pub async fn psxmp_get_lyrics(file: String) -> Option<String> {
+    let bytes = opfs_read(&file).await.ok()?;
+    xmpkit_body::read_lyrics(&bytes).filter(|s| !s.is_empty())
+}
+
+#[wasm_bindgen]
+pub async fn psxmp_get_shot_number(file: String) -> Option<String> {
+    let bytes = opfs_read(&file).await.ok()?;
+    xmpkit_body::read_shot_number(&bytes).filter(|s| !s.is_empty())
 }
 
 #[wasm_bindgen]

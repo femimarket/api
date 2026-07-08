@@ -71,10 +71,14 @@ pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpInitDocuments
 pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpSaveFile<'l>(
     mut env: JNIEnv<'l>, _class: JClass<'l>,
     name: JString<'l>, bytes: JByteArray<'l>,
-    prompt: JString<'l>, model: JString<'l>, subject: JObjectArray<'l>,
+    prompt: JString<'l>, model: JString<'l>, subject: JObjectArray<'l>, project_name: JString<'l>,
+    lyrics: JString<'l>, shot_number: JString<'l>,
 ) {
     let Some(n) = jstr(&mut env, name) else { return };
     let Ok(data) = env.convert_byte_array(&bytes) else { return };
+    let ti = jstr(&mut env, project_name);
+    let ly = jstr(&mut env, lyrics);
+    let sn = jstr(&mut env, shot_number);
     let pr = jstr(&mut env, prompt);
     let md = jstr(&mut env, model);
     let mut items: Vec<String> = Vec::new();
@@ -88,11 +92,11 @@ pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpSaveFile<'l>(
         }
     }
     let path = full_path(&n);
-    let bytes_out = if pr.is_none() && md.is_none() && items.is_empty() {
+    let bytes_out = if ti.is_none() && pr.is_none() && md.is_none() && items.is_empty() && ly.is_none() && sn.is_none() {
         data
     } else {
         let refs: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
-        xmpkit_body::embed(&data, pr.as_deref(), md.as_deref(), &refs)
+        xmpkit_body::embed(&data, pr.as_deref(), md.as_deref(), &refs, ti.as_deref(), ly.as_deref(), sn.as_deref())
     };
     let _ = fs::write(&path, bytes_out);
 }
@@ -139,6 +143,42 @@ pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpGetAudio<'l>(
     match list_names().into_iter().find(|n| is_audio(n)) {
         Some(s) => new_jstring(&env, &s),
         None => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpGetProjectName<'l>(
+    mut env: JNIEnv<'l>, _class: JClass<'l>, file: JString<'l>,
+) -> jstring {
+    let Some(f) = jstr(&mut env, file) else { return std::ptr::null_mut() };
+    let Ok(data) = fs::read(full_path(&f)) else { return std::ptr::null_mut() };
+    match xmpkit_body::read_project_name(&data) {
+        Some(s) if !s.is_empty() => new_jstring(&env, &s),
+        _ => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpGetLyrics<'l>(
+    mut env: JNIEnv<'l>, _class: JClass<'l>, file: JString<'l>,
+) -> jstring {
+    let Some(f) = jstr(&mut env, file) else { return std::ptr::null_mut() };
+    let Ok(data) = fs::read(full_path(&f)) else { return std::ptr::null_mut() };
+    match xmpkit_body::read_lyrics(&data) {
+        Some(s) if !s.is_empty() => new_jstring(&env, &s),
+        _ => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_market_femi_api_ProjectServiceJvm_psxmpGetShotNumber<'l>(
+    mut env: JNIEnv<'l>, _class: JClass<'l>, file: JString<'l>,
+) -> jstring {
+    let Some(f) = jstr(&mut env, file) else { return std::ptr::null_mut() };
+    let Ok(data) = fs::read(full_path(&f)) else { return std::ptr::null_mut() };
+    match xmpkit_body::read_shot_number(&data) {
+        Some(s) if !s.is_empty() => new_jstring(&env, &s),
+        _ => std::ptr::null_mut(),
     }
 }
 

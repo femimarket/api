@@ -25,11 +25,14 @@ external interface RustFfiModule : JsAny {
     fun wasm_qwen3_asr_flash(user: String, pass: String, audioB64: String): Promise<JsString>
     fun wasm_qwen3_6_35b_a3b(user: String, pass: String, messagesJson: String): Promise<JsString>
     fun extract_sylt(bytes: JsAny): JsString
-    fun psxmp_save_file(name: String, bytes: JsAny, prompt: String?, model: String?, subjects: JsAny): Promise<JsAny?>
+    fun psxmp_save_file(name: String, bytes: JsAny, prompt: String?, model: String?, subjects: JsAny, projectName: String?, lyrics: String?, shotNumber: String?): Promise<JsAny?>
     fun psxmp_save_audio(name: String, bytes: JsAny): Promise<JsAny?>
     fun psxmp_like(file: String, liked: Boolean): Promise<JsAny?>
     fun psxmp_get_all_generations(): Promise<JsString>
     fun psxmp_get_audio(): Promise<JsString?>
+    fun psxmp_get_project_name(file: String): Promise<JsString?>
+    fun psxmp_get_lyrics(file: String): Promise<JsString?>
+    fun psxmp_get_shot_number(file: String): Promise<JsString?>
     fun psxmp_get_prompt(file: String): Promise<JsString?>
     fun psxmp_get_model(file: String): Promise<JsString?>
     fun psxmp_get_subject(file: String): Promise<JsString?>

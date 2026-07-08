@@ -36,15 +36,20 @@ unsafe fn cstr<'a>(p: *const c_char) -> Option<&'a str> {
     CStr::from_ptr(p).to_str().ok()
 }
 
+// Returns the full byte length of `s` (excluding the null terminator), always —
+// whether or not it fit. Only writes into `buf` when it has room for the text
+// plus a trailing null; otherwise writes nothing (a null/zero buffer is a valid
+// "how big?" size query). Callers use the returned length to size their buffer
+// and call again. This makes arbitrarily long results safe — no truncation.
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
 unsafe fn write_str(buf: *mut c_char, buf_len: c_int, s: &str) -> c_int {
-    if buf.is_null() || buf_len <= 0 { return -1; }
     let bytes = s.as_bytes();
-    let cap = (buf_len as usize).saturating_sub(1);
-    let len = bytes.len().min(cap);
-    std::ptr::copy_nonoverlapping(bytes.as_ptr() as *const c_char, buf, len);
-    *buf.add(len) = 0;
-    len as c_int
+    let needed = bytes.len();
+    if !buf.is_null() && buf_len > 0 && (buf_len as usize) > needed {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr() as *const c_char, buf, needed);
+        *buf.add(needed) = 0;
+    }
+    needed as c_int
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
@@ -55,10 +60,16 @@ pub unsafe extern "C" fn psxmp_save_file(
     prompt: *const c_char,
     model: *const c_char,
     subject: *const *const c_char, subject_count: c_int,
+    project_name: *const c_char,
+    lyrics: *const c_char,
+    shot_number: *const c_char,
 ) {
     let Some(n) = cstr(name) else { return };
     if bytes.is_null() { return }
     let data = std::slice::from_raw_parts(bytes, len);
+    let ti = cstr(project_name);
+    let ly = cstr(lyrics);
+    let sn = cstr(shot_number);
     let pr = cstr(prompt);
     let md = cstr(model);
     let mut items: Vec<&str> = Vec::new();
@@ -67,7 +78,7 @@ pub unsafe extern "C" fn psxmp_save_file(
             if let Some(s) = cstr(*subject.add(i as usize)) { items.push(s); }
         }
     }
-    backend::save_file(n, data, pr, md, &items);
+    backend::save_file(n, data, pr, md, &items, ti, ly, sn);
 }
 
 #[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
@@ -99,6 +110,36 @@ pub unsafe extern "C" fn psxmp_get_audio(buf: *mut c_char, buf_len: c_int) -> c_
     match backend::get_audio() {
         Some(s) => write_str(buf, buf_len, &s),
         None => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_project_name(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    match backend::get_project_name(f) {
+        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
+        _ => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_lyrics(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    match backend::get_lyrics(f) {
+        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
+        _ => 0,
+    }
+}
+
+#[cfg(all(target_vendor = "apple", not(target_arch = "wasm32")))]
+#[no_mangle]
+pub unsafe extern "C" fn psxmp_get_shot_number(file: *const c_char, buf: *mut c_char, buf_len: c_int) -> c_int {
+    let Some(f) = cstr(file) else { return -1 };
+    match backend::get_shot_number(f) {
+        Some(s) if !s.is_empty() => write_str(buf, buf_len, &s),
+        _ => 0,
     }
 }
 

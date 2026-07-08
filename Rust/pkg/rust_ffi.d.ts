@@ -709,9 +709,15 @@ export function psxmp_get_image_edit(): string | undefined;
 
 export function psxmp_get_like(file: string): Promise<boolean>;
 
+export function psxmp_get_lyrics(file: string): Promise<string | undefined>;
+
 export function psxmp_get_model(file: string): Promise<string | undefined>;
 
+export function psxmp_get_project_name(file: string): Promise<string | undefined>;
+
 export function psxmp_get_prompt(file: string): Promise<string | undefined>;
+
+export function psxmp_get_shot_number(file: string): Promise<string | undefined>;
 
 export function psxmp_get_subject(file: string): Promise<string | undefined>;
 
@@ -721,7 +727,7 @@ export function psxmp_like(file: string, liked: boolean): Promise<void>;
 
 export function psxmp_save_audio(name: string, bytes: Uint8Array): Promise<void>;
 
-export function psxmp_save_file(name: string, bytes: Uint8Array, prompt: string | null | undefined, model: string | null | undefined, subjects: string[]): Promise<void>;
+export function psxmp_save_file(name: string, bytes: Uint8Array, prompt: string | null | undefined, model: string | null | undefined, subjects: string[], project_name?: string | null, lyrics?: string | null, shot_number?: string | null): Promise<void>;
 
 export function psxmp_set_character_cast(a: string, b: string): void;
 
@@ -773,13 +779,16 @@ export interface InitOutput {
     readonly psxmp_get_character_cast: (a: number) => void;
     readonly psxmp_get_image_edit: (a: number) => void;
     readonly psxmp_get_like: (a: number, b: number) => number;
+    readonly psxmp_get_lyrics: (a: number, b: number) => number;
     readonly psxmp_get_model: (a: number, b: number) => number;
+    readonly psxmp_get_project_name: (a: number, b: number) => number;
     readonly psxmp_get_prompt: (a: number, b: number) => number;
+    readonly psxmp_get_shot_number: (a: number, b: number) => number;
     readonly psxmp_get_subject: (a: number, b: number) => number;
     readonly psxmp_get_url: (a: number, b: number, c: number) => void;
     readonly psxmp_like: (a: number, b: number, c: number) => number;
     readonly psxmp_save_audio: (a: number, b: number, c: number, d: number) => number;
-    readonly psxmp_save_file: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly psxmp_save_file: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number) => number;
     readonly psxmp_set_character_cast: (a: number, b: number, c: number, d: number) => void;
     readonly psxmp_set_image_edit: (a: number, b: number) => void;
     readonly wasm_flux2_dev_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
@@ -869,10 +878,10 @@ export interface InitOutput {
     readonly xmpvalue_integer: (a: bigint) => number;
     readonly xmpvalue_kind: (a: number) => number;
     readonly xmpvalue_string: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_3086: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3091: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_880: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_2199: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3107: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3112: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_901: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_2220: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

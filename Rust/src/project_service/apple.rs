@@ -3,7 +3,7 @@
 //! `dirs::document_dir` and prepends it internally. XMP metadata mutation
 //! goes through `xmp_toolkit`'s smart handlers.
 
-use super::shared::{NS_DC, NS_IPTC_EXT, NS_XMP};
+use super::shared::{NS_DC, NS_IPTC_EXT, NS_XMP, NS_XMP_DM};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use xmp_toolkit::{OpenFileOptions, XmpFile, XmpMeta, XmpValue};
@@ -31,13 +31,13 @@ fn is_audio(name: &str) -> bool {
 
 // ---------- Save ----------
 
-pub fn save_file(name: &str, bytes: &[u8], prompt: Option<&str>, model: Option<&str>, subject: &[&str]) {
+pub fn save_file(name: &str, bytes: &[u8], prompt: Option<&str>, model: Option<&str>, subject: &[&str], project_name: Option<&str>, lyrics: Option<&str>, shot_number: Option<&str>) {
     let path = get_url(name);
     std::fs::write(&path, bytes).expect("save_file: write failed");
-    if prompt.is_none() && model.is_none() && subject.is_empty() {
+    if project_name.is_none() && prompt.is_none() && model.is_none() && subject.is_empty() && lyrics.is_none() && shot_number.is_none() {
         return;
     }
-    embed_xmp(&path, prompt, model, subject);
+    embed_xmp(&path, prompt, model, subject, project_name, lyrics, shot_number);
 }
 
 pub fn save_audio(name: &str, bytes: &[u8]) {
@@ -62,6 +62,24 @@ pub fn list_generations() -> Vec<String> {
 
 pub fn get_audio() -> Option<String> {
     list_generations().into_iter().find(|n| is_audio(n))
+}
+
+pub fn get_project_name(file: &str) -> Option<String> {
+    let mut f = open_for_read(&get_url(file))?;
+    let m = load_meta(&mut f);
+    m.property(NS_XMP_DM, "projectName").map(|v| v.value)
+}
+
+pub fn get_lyrics(file: &str) -> Option<String> {
+    let mut f = open_for_read(&get_url(file))?;
+    let m = load_meta(&mut f);
+    m.property(NS_XMP_DM, "lyrics").map(|v| v.value)
+}
+
+pub fn get_shot_number(file: &str) -> Option<String> {
+    let mut f = open_for_read(&get_url(file))?;
+    let m = load_meta(&mut f);
+    m.property(NS_XMP_DM, "shotNumber").map(|v| v.value)
 }
 
 pub fn get_prompt(file: &str) -> Option<String> {
@@ -157,9 +175,18 @@ fn load_meta(f: &mut XmpFile) -> XmpMeta {
     f.xmp().unwrap_or_else(|| XmpMeta::new().unwrap())
 }
 
-fn embed_xmp(path: &str, prompt: Option<&str>, model: Option<&str>, subject: &[&str]) {
+fn embed_xmp(path: &str, prompt: Option<&str>, model: Option<&str>, subject: &[&str], project_name: Option<&str>, lyrics: Option<&str>, shot_number: Option<&str>) {
     let Ok(mut file) = open_for_update(path) else { return };
     let mut meta = load_meta(&mut file);
+    if let Some(s) = project_name {
+        let _ = meta.set_property(NS_XMP_DM, "projectName", &XmpValue::new(s.to_owned()));
+    }
+    if let Some(s) = lyrics {
+        let _ = meta.set_property(NS_XMP_DM, "lyrics", &XmpValue::new(s.to_owned()));
+    }
+    if let Some(s) = shot_number {
+        let _ = meta.set_property(NS_XMP_DM, "shotNumber", &XmpValue::new(s.to_owned()));
+    }
     if let Some(s) = prompt {
         let _ = meta.set_localized_text(NS_DC, "description", None, "x-default", s);
         let _ = meta.set_property(NS_IPTC_EXT, "AIPromptInformation", &XmpValue::new(s.to_owned()));

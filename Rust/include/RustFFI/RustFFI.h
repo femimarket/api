@@ -72,11 +72,14 @@ uint8_t *rust_ffi_ltx2_3a2v_comfyui(const char *comfy_key,
 
 // ---------- ProjectService FFI (Rust owns Documents/; every call takes a filename) ----------
 
-void    psxmp_save_file(const char *name, const uint8_t *bytes, size_t len, const char *prompt, const char *model, const char *const *subject, int32_t subject_count);
+void    psxmp_save_file(const char *name, const uint8_t *bytes, size_t len, const char *prompt, const char *model, const char *const *subject, int32_t subject_count, const char *project_name, const char *lyrics, const char *shot_number);
 void    psxmp_save_audio(const char *name, const uint8_t *bytes, size_t len);
 void    psxmp_like(const char *file, int32_t liked);
 int32_t psxmp_get_all_generations(char *buf, int32_t buf_len);
 int32_t psxmp_get_audio(char *buf, int32_t buf_len);
+int32_t psxmp_get_project_name(const char *file, char *buf, int32_t buf_len);
+int32_t psxmp_get_lyrics(const char *file, char *buf, int32_t buf_len);
+int32_t psxmp_get_shot_number(const char *file, char *buf, int32_t buf_len);
 int32_t psxmp_get_prompt(const char *file, char *buf, int32_t buf_len);
 int32_t psxmp_get_model(const char *file, char *buf, int32_t buf_len);
 int32_t psxmp_get_subject(const char *file, char *buf, int32_t buf_len);

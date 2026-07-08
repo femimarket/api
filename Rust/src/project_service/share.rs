@@ -8,10 +8,11 @@
 pub const NS_DC: &str = "http://purl.org/dc/elements/1.1/";
 pub const NS_XMP: &str = "http://ns.adobe.com/xap/1.0/";
 pub const NS_IPTC_EXT: &str = "http://iptc.org/std/Iptc4xmpExt/2008-02-29/";
+pub const NS_XMP_DM: &str = "http://ns.adobe.com/xmp/1.0/DynamicMedia/";
 
 #[cfg(not(target_os = "ios"))]
 pub mod xmpkit_body {
-    use super::{NS_DC, NS_IPTC_EXT, NS_XMP};
+    use super::{NS_DC, NS_IPTC_EXT, NS_XMP, NS_XMP_DM};
     use xmpkit::core::metadata::XmpMeta;
     use xmpkit::files::file::XmpFile;
     use xmpkit::files::handler::XmpOptions;
@@ -25,8 +26,20 @@ pub mod xmpkit_body {
         (xf, meta)
     }
 
-    pub fn embed(bytes: &[u8], prompt: Option<&str>, model: Option<&str>, subject: &[&str]) -> Vec<u8> {
+    pub fn embed(bytes: &[u8], prompt: Option<&str>, model: Option<&str>, subject: &[&str], project_name: Option<&str>, lyrics: Option<&str>, shot_number: Option<&str>) -> Vec<u8> {
         let (mut xf, mut meta) = load(bytes);
+        if let Some(s) = project_name {
+            meta.set_property(NS_XMP_DM, "projectName", XmpValue::from(s))
+                .expect("xmpkit: set_property(xmpDM:projectName) failed");
+        }
+        if let Some(s) = lyrics {
+            meta.set_property(NS_XMP_DM, "lyrics", XmpValue::from(s))
+                .expect("xmpkit: set_property(xmpDM:lyrics) failed");
+        }
+        if let Some(s) = shot_number {
+            meta.set_property(NS_XMP_DM, "shotNumber", XmpValue::from(s))
+                .expect("xmpkit: set_property(xmpDM:shotNumber) failed");
+        }
         if let Some(s) = prompt {
             meta.set_localized_text(NS_DC, "description", "", "x-default", s)
                 .expect("xmpkit: set_localized_text(dc:description) failed");
@@ -64,6 +77,18 @@ pub mod xmpkit_body {
         Some(xf.get_xmp().cloned().unwrap_or_else(XmpMeta::new))
     }
 
+    pub fn read_project_name(bytes: &[u8]) -> Option<String> {
+        let m = read_only(bytes)?;
+        m.get_property(NS_XMP_DM, "projectName").and_then(|v| v.as_str().map(|s| s.to_string()))
+    }
+    pub fn read_lyrics(bytes: &[u8]) -> Option<String> {
+        let m = read_only(bytes)?;
+        m.get_property(NS_XMP_DM, "lyrics").and_then(|v| v.as_str().map(|s| s.to_string()))
+    }
+    pub fn read_shot_number(bytes: &[u8]) -> Option<String> {
+        let m = read_only(bytes)?;
+        m.get_property(NS_XMP_DM, "shotNumber").and_then(|v| v.as_str().map(|s| s.to_string()))
+    }
     pub fn read_prompt(bytes: &[u8]) -> Option<String> {
         let m = read_only(bytes)?;
         if let Some(v) = m.get_property(NS_IPTC_EXT, "AIPromptInformation") {

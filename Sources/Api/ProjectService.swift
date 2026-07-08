@@ -22,20 +22,41 @@ public enum ProjectService {
         named file: String,
         prompt: String? = nil,
         model: String? = nil,
-        subject: [String]? = nil
+        subject: [String]? = nil,
+        projectName: String? = nil,
+        lyrics: String? = nil,
+        shotNumber: String? = nil
     ) {
         file.withCString { name in
             withOptionalCString(prompt) { pr in
                 withOptionalCString(model) { md in
-                    withCStringArray(subject ?? []) { arr, count in
-                        data.withUnsafeBytes { buf in
-                            let base = buf.baseAddress?.assumingMemoryBound(to: UInt8.self)
-                            psxmp_save_file(name, base, buf.count, pr, md, arr, count)
+                    withOptionalCString(projectName) { ti in
+                        withOptionalCString(lyrics) { ly in
+                            withOptionalCString(shotNumber) { sn in
+                                withCStringArray(subject ?? []) { arr, count in
+                                    data.withUnsafeBytes { buf in
+                                        let base = buf.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                                        psxmp_save_file(name, base, buf.count, pr, md, arr, count, ti, ly, sn)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    public static func getProjectName(_ file: String) -> String? {
+        file.withCString { name in readString(fill: { psxmp_get_project_name(name, $0, $1) }) }
+    }
+
+    public static func getLyrics(_ file: String) -> String? {
+        file.withCString { name in readString(fill: { psxmp_get_lyrics(name, $0, $1) }) }
+    }
+
+    public static func getShotNumber(_ file: String) -> String? {
+        file.withCString { name in readString(fill: { psxmp_get_shot_number(name, $0, $1) }) }
     }
 
     /// Replace the audio file in `Documents/`.
@@ -124,12 +145,17 @@ public enum ProjectService {
     private static func readString(
         fill: (UnsafeMutablePointer<CChar>?, Int32) -> Int32
     ) -> String? {
-        var buf = [CChar](repeating: 0, count: 8192)
+        // First call sizes the result (buffer = nil/0 → "how big?"), then we
+        // allocate exactly that and fill it. Never truncates, however long.
+        let needed = fill(nil, 0)
+        guard needed > 0 else { return nil }
+        var buf = [CChar](repeating: 0, count: Int(needed) + 1)
         let written = buf.withUnsafeMutableBufferPointer { bp in
             fill(bp.baseAddress, Int32(bp.count))
         }
         guard written > 0 else { return nil }
-        let bytes = buf.prefix(Int(written)).map { UInt8(bitPattern: $0) }
+        let n = min(Int(written), Int(needed))
+        let bytes = buf.prefix(n).map { UInt8(bitPattern: $0) }
         return String(decoding: bytes, as: UTF8.self)
     }
 
