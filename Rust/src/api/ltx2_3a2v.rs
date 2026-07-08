@@ -1,6 +1,6 @@
 use crate::{client, resolve_video, URL};
 
-pub(crate) async fn core_ltx2_3a2v(user: String, password: String, image_b64: String, audio_b64: String, prompt: String) -> Vec<u8> {
+pub(crate) async fn core_ltx2_3a2v(image_b64: String, audio_b64: String, prompt: String) -> Vec<u8> {
     let body = serde_json::json!({
         "id": uuid::Uuid::now_v7(),
         "user_id": "",
@@ -13,7 +13,7 @@ pub(crate) async fn core_ltx2_3a2v(user: String, password: String, image_b64: St
             "file": "",
         },
     });
-    let req = client().post(URL).json(&body).basic_auth(user, Some(password));
+    let req = client().post(URL).json(&body);
     let (status, bytes) = match req.send().await {
         Ok(r) => {
             let status = r.status().as_u16();
@@ -35,8 +35,6 @@ pub mod native {
 
     #[unsafe(no_mangle)]
     pub extern "C" fn rust_ffi_ltx2_3a2v(
-        user: *const c_char,
-        password: *const c_char,
         image_b64: *const c_char,
         audio_b64: *const c_char,
         prompt: *const c_char,
@@ -44,15 +42,13 @@ pub mod native {
         out_len: *mut usize,
     ) -> *mut u8 {
         let s = |p: *const c_char| unsafe { (!p.is_null()).then(|| CStr::from_ptr(p).to_string_lossy().into_owned()) };
-        let u = s(user).unwrap_or_default();
-        let pw = s(password).unwrap_or_default();
         let i = s(image_b64).unwrap_or_default();
         let a = s(audio_b64).unwrap_or_default();
         let pr = s(prompt).unwrap_or_default();
         let cancel_addr = if cancel_flag.is_null() { 0usize } else { cancel_flag as usize };
 
         let bytes = rt().block_on(async move {
-            let do_call = core_ltx2_3a2v(u, pw, i, a, pr);
+            let do_call = core_ltx2_3a2v(i, a, pr);
             if cancel_addr == 0 {
                 do_call.await
             } else {
@@ -83,8 +79,8 @@ pub mod wasm {
     use wasm_bindgen::prelude::*;
 
     #[wasm_bindgen]
-    pub async fn wasm_ltx2_3a2v(user: String, password: String, image_b64: String, audio_b64: String, prompt: String) -> js_sys::Uint8Array {
-        let bytes = core_ltx2_3a2v(user, password, image_b64, audio_b64, prompt).await;
+    pub async fn wasm_ltx2_3a2v(image_b64: String, audio_b64: String, prompt: String) -> js_sys::Uint8Array {
+        let bytes = core_ltx2_3a2v(image_b64, audio_b64, prompt).await;
         js_sys::Uint8Array::from(bytes.as_slice())
     }
 }

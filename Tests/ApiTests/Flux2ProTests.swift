@@ -3,10 +3,8 @@ import Foundation
 @testable import Api
 
 struct Flux2ProTests {
-    @Test func fundedUserReturnsRealImage() async throws {
+    @Test func returnsRealImage() async throws {
         let img = await Api.flux2Pro(
-            user: testUser,
-            password: testPassword,
             prompt: "a red apple on a wooden table"
         )
         #expect(!img.isEmpty)
@@ -16,7 +14,7 @@ struct Flux2ProTests {
 
     @Test func cancellationReturnsFallback() async throws {
         let task = Task {
-            await Api.flux2Pro(user: testUser, password: testPassword, prompt: "a red apple on a wooden table")
+            await Api.flux2Pro(prompt: "a red apple on a wooden table")
         }
         try await Task.sleep(nanoseconds: 100_000_000)
         task.cancel()

@@ -3,8 +3,6 @@ import RustFFI
 
 extension Api {
     public static func qwen3AsrFlash(
-        user: String,
-        password: String,
         audio: Data
     ) async -> String {
         let flag = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
@@ -16,12 +14,8 @@ extension Api {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
                 var len = 0
-                let ptr = user.withCString { u in
-                    password.withCString { pw in
-                        audioB64.withCString { a in
-                            rust_ffi_qwen3_asr_flash(u, pw, a, p, &len)!
-                        }
-                    }
+                let ptr = audioB64.withCString { a in
+                    rust_ffi_qwen3_asr_flash(a, p, &len)!
                 }
                 let body = Data(bytesNoCopy: ptr, count: len, deallocator: .free)
                 return String(data: body, encoding: .utf8)!

@@ -3,8 +3,6 @@ import RustFFI
 
 extension Api {
     public static func flux2DevI2I(
-        user: String,
-        password: String,
         image: Data,
         prompt: String
     ) async -> Data {
@@ -17,13 +15,9 @@ extension Api {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
                 var len = 0
-                let ptr = user.withCString { u in
-                    password.withCString { pw in
-                        imageB64.withCString { i in
-                            prompt.withCString { pr in
-                                rust_ffi_flux2_dev_i2i(u, pw, i, pr, p, &len)!
-                            }
-                        }
+                let ptr = imageB64.withCString { i in
+                    prompt.withCString { pr in
+                        rust_ffi_flux2_dev_i2i(i, pr, p, &len)!
                     }
                 }
                 return Data(bytesNoCopy: ptr, count: len, deallocator: .free)

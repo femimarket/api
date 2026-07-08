@@ -15,15 +15,23 @@ import kotlin.js.js
 // once, and cached. Call `rustFfi()` (suspend) to get the ready module.
 
 external interface RustFfiModule : JsAny {
-    fun wasm_z_image_turbo(user: String, pass: String, prompt: String): Promise<JsAny?>
-    fun wasm_nano_banana2(user: String, pass: String, prompt: String): Promise<JsAny?>
-    fun wasm_flux2_pro(user: String, pass: String, prompt: String): Promise<JsAny?>
-    fun wasm_flux2_dev_i2i(user: String, pass: String, imageB64: String, prompt: String): Promise<JsAny?>
-    fun wasm_flux2_klein_i2i(user: String, pass: String, imageB64: String, image2B64: String, prompt: String): Promise<JsAny?>
-    fun wasm_ltx2_3a2v(user: String, pass: String, imageB64: String, audioB64: String, prompt: String): Promise<JsAny?>
+    fun wasm_z_image_turbo(prompt: String): Promise<JsAny?>
+    fun wasm_nano_banana2(prompt: String): Promise<JsAny?>
+    fun wasm_flux2_pro(prompt: String): Promise<JsAny?>
+    fun wasm_flux2_dev_i2i(imageB64: String, prompt: String): Promise<JsAny?>
+    fun wasm_flux2_klein_i2i(imageB64: String, image2B64: String, prompt: String): Promise<JsAny?>
+    fun wasm_ltx2_3a2v(imageB64: String, audioB64: String, prompt: String): Promise<JsAny?>
     fun wasm_ltx2_3a2v_comfyui(comfyKey: String, imageB64: String, audioB64: String, prompt: String): Promise<JsAny?>
-    fun wasm_qwen3_asr_flash(user: String, pass: String, audioB64: String): Promise<JsString>
-    fun wasm_qwen3_6_35b_a3b(user: String, pass: String, messagesJson: String): Promise<JsString>
+    fun wasm_qwen3_asr_flash(audioB64: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b(messagesJson: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_0gen_music_video_prompt(): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_1gen_new_angle_from_xmp_image_prompt(xmpPrompt: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_1gen_random_idea_from_xmp_prompt(xmpPrompt: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_1gen_3_variants_from_xmp_prompt_as_jsonarray(xmpPrompt: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_2gen_augment_idea_from_xmp_prompt_and_text(xmpPrompt: String, text: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_2gen_50_100_word_multishot_timestamped_prompt_from_2_xmp_image_prompts(xmpPrompt: String, xmpPrompt2: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_3gen_50_100_word_multishot_timestamped_prompt_from_3_xmp_image_prompts(xmpPrompt: String, xmpPrompt2: String, xmpPrompt3: String): Promise<JsString>
+    fun wasm_qwen3_6_35b_a3b_4gen_augment_idea_from_3_xmp_prompts_and_text(xmpPrompt: String, xmpPrompt2: String, xmpPrompt3: String, text: String): Promise<JsString>
     fun extract_sylt(bytes: JsAny): JsString
     fun psxmp_save_file(name: String, bytes: JsAny, prompt: String?, model: String?, subjects: JsAny, projectName: String?, lyrics: String?, shotNumber: String?): Promise<JsAny?>
     fun psxmp_save_audio(name: String, bytes: JsAny): Promise<JsAny?>

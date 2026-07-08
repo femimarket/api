@@ -1,6 +1,6 @@
 use crate::{client, URL};
 
-pub(crate) async fn core_qwen3_6_35b_a3b(user: String, password: String, messages_json: String) -> Vec<u8> {
+pub(crate) async fn core_qwen3_6_35b_a3b(messages_json: String) -> Vec<u8> {
     let original: serde_json::Value = serde_json::from_str(&messages_json)
         .unwrap_or_else(|_| serde_json::Value::Array(Vec::new()));
     let body = serde_json::json!({
@@ -8,7 +8,7 @@ pub(crate) async fn core_qwen3_6_35b_a3b(user: String, password: String, message
         "user_id": "",
         "action": { "type": "Qwen3_6_35bA3b", "messages": original.clone() },
     });
-    let req = client().post(URL).json(&body).basic_auth(user, Some(password));
+    let req = client().post(URL).json(&body);
     let (status, bytes) = match req.send().await {
         Ok(r) => {
             let status = r.status().as_u16();
@@ -43,21 +43,17 @@ pub mod native {
 
     #[unsafe(no_mangle)]
     pub extern "C" fn rust_ffi_qwen3_6_35b_a3b(
-        user: *const c_char,
-        password: *const c_char,
         messages_json: *const c_char,
         cancel_flag: *const u8,
         out_len: *mut usize,
     ) -> *mut u8 {
         let s = |p: *const c_char| unsafe { (!p.is_null()).then(|| CStr::from_ptr(p).to_string_lossy().into_owned()) };
-        let u = s(user).unwrap_or_default();
-        let pw = s(password).unwrap_or_default();
         let m = s(messages_json).unwrap_or_default();
         let cancel_addr = if cancel_flag.is_null() { 0usize } else { cancel_flag as usize };
 
         let bytes = rt().block_on(async move {
             let m_for_cancel = m.clone();
-            let do_call = core_qwen3_6_35b_a3b(u, pw, m);
+            let do_call = core_qwen3_6_35b_a3b(m);
             if cancel_addr == 0 {
                 do_call.await
             } else {
@@ -72,7 +68,6 @@ pub mod native {
                 tokio::select! {
                     r = do_call => r,
                     _ = watch => {
-                        // On cancel: return input messages + "Could not respond" assistant turn.
                         let original: serde_json::Value = serde_json::from_str(&m_for_cancel)
                             .unwrap_or_else(|_| serde_json::Value::Array(Vec::new()));
                         let mut arr = original.as_array().cloned().unwrap_or_default();
@@ -95,8 +90,8 @@ pub mod wasm {
     use wasm_bindgen::prelude::*;
 
     #[wasm_bindgen]
-    pub async fn wasm_qwen3_6_35b_a3b(user: String, password: String, messages_json: String) -> String {
-        let bytes = core_qwen3_6_35b_a3b(user, password, messages_json).await;
+    pub async fn wasm_qwen3_6_35b_a3b(messages_json: String) -> String {
+        let bytes = core_qwen3_6_35b_a3b(messages_json).await;
         String::from_utf8(bytes).unwrap_or_default()
     }
 }

@@ -749,23 +749,39 @@ export function psxmp_set_image_edit(file: string): void;
  */
 export function register_namespace(uri: string, prefix: string): void;
 
-export function wasm_flux2_dev_i2i(user: string, password: string, image_b64: string, prompt: string): Promise<Uint8Array>;
+export function wasm_flux2_dev_i2i(image_b64: string, prompt: string): Promise<Uint8Array>;
 
-export function wasm_flux2_klein_i2i(user: string, password: string, image_b64: string, image2_b64: string, prompt: string): Promise<Uint8Array>;
+export function wasm_flux2_klein_i2i(image_b64: string, image2_b64: string, prompt: string): Promise<Uint8Array>;
 
-export function wasm_flux2_pro(user: string, password: string, prompt: string): Promise<Uint8Array>;
+export function wasm_flux2_pro(prompt: string): Promise<Uint8Array>;
 
-export function wasm_ltx2_3a2v(user: string, password: string, image_b64: string, audio_b64: string, prompt: string): Promise<Uint8Array>;
+export function wasm_ltx2_3a2v(image_b64: string, audio_b64: string, prompt: string): Promise<Uint8Array>;
 
 export function wasm_ltx2_3a2v_comfyui(comfy_key: string, image_b64: string, audio_b64: string, prompt: string): Promise<Uint8Array>;
 
-export function wasm_nano_banana2(user: string, password: string, prompt: string): Promise<Uint8Array>;
+export function wasm_nano_banana2(prompt: string): Promise<Uint8Array>;
 
-export function wasm_qwen3_6_35b_a3b(user: string, password: string, messages_json: string): Promise<string>;
+export function wasm_qwen3_6_35b_a3b(messages_json: string): Promise<string>;
 
-export function wasm_qwen3_asr_flash(user: string, password: string, audio_b64: string): Promise<string>;
+export function wasm_qwen3_6_35b_a3b_0gen_music_video_prompt(): Promise<string>;
 
-export function wasm_z_image_turbo(user: string, password: string, prompt: string): Promise<Uint8Array>;
+export function wasm_qwen3_6_35b_a3b_1gen_3_variants_from_xmp_prompt_as_jsonarray(xmp_prompt: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_1gen_new_angle_from_xmp_image_prompt(xmp_prompt: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_1gen_random_idea_from_xmp_prompt(xmp_prompt: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_2gen_50_100_word_multishot_timestamped_prompt_from_2_xmp_image_prompts(xmp_prompt: string, xmp_prompt2: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_2gen_augment_idea_from_xmp_prompt_and_text(xmp_prompt: string, text: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_3gen_50_100_word_multishot_timestamped_prompt_from_3_xmp_image_prompts(xmp_prompt: string, xmp_prompt2: string, xmp_prompt3: string): Promise<string>;
+
+export function wasm_qwen3_6_35b_a3b_4gen_augment_idea_from_3_xmp_prompts_and_text(xmp_prompt: string, xmp_prompt2: string, xmp_prompt3: string, text: string): Promise<string>;
+
+export function wasm_qwen3_asr_flash(audio_b64: string): Promise<string>;
+
+export function wasm_z_image_turbo(prompt: string): Promise<Uint8Array>;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -791,15 +807,23 @@ export interface InitOutput {
     readonly psxmp_save_file: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number) => number;
     readonly psxmp_set_character_cast: (a: number, b: number, c: number, d: number) => void;
     readonly psxmp_set_image_edit: (a: number, b: number) => void;
-    readonly wasm_flux2_dev_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
-    readonly wasm_flux2_klein_i2i: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
-    readonly wasm_flux2_pro: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly wasm_ltx2_3a2v: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => number;
+    readonly wasm_flux2_dev_i2i: (a: number, b: number, c: number, d: number) => number;
+    readonly wasm_flux2_klein_i2i: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly wasm_flux2_pro: (a: number, b: number) => number;
+    readonly wasm_ltx2_3a2v: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly wasm_ltx2_3a2v_comfyui: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
-    readonly wasm_nano_banana2: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly wasm_qwen3_6_35b_a3b: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly wasm_qwen3_asr_flash: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly wasm_z_image_turbo: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly wasm_nano_banana2: (a: number, b: number) => number;
+    readonly wasm_qwen3_6_35b_a3b: (a: number, b: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_0gen_music_video_prompt: () => number;
+    readonly wasm_qwen3_6_35b_a3b_1gen_3_variants_from_xmp_prompt_as_jsonarray: (a: number, b: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_1gen_new_angle_from_xmp_image_prompt: (a: number, b: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_1gen_random_idea_from_xmp_prompt: (a: number, b: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_2gen_50_100_word_multishot_timestamped_prompt_from_2_xmp_image_prompts: (a: number, b: number, c: number, d: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_2gen_augment_idea_from_xmp_prompt_and_text: (a: number, b: number, c: number, d: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_3gen_50_100_word_multishot_timestamped_prompt_from_3_xmp_image_prompts: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly wasm_qwen3_6_35b_a3b_4gen_augment_idea_from_3_xmp_prompts_and_text: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => number;
+    readonly wasm_qwen3_asr_flash: (a: number, b: number) => number;
+    readonly wasm_z_image_turbo: (a: number, b: number) => number;
     readonly __wbg_qualifier_free: (a: number, b: number) => void;
     readonly __wbg_xmpdatetime_free: (a: number, b: number) => void;
     readonly __wbg_xmperror_free: (a: number, b: number) => void;
@@ -878,10 +902,10 @@ export interface InitOutput {
     readonly xmpvalue_integer: (a: bigint) => number;
     readonly xmpvalue_kind: (a: number) => number;
     readonly xmpvalue_string: (a: number, b: number) => number;
-    readonly __wasm_bindgen_func_elem_3107: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3112: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_901: (a: number, b: number) => void;
-    readonly __wasm_bindgen_func_elem_2220: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_3169: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3174: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_965: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_2282: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

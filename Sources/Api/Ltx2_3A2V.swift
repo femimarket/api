@@ -8,8 +8,6 @@ extension Api {
     /// success, or the embedded topup/fallback MP4 the Rust FFI resolves for
     /// any failure.
     public static func ltx2_3a2v(
-        user: String,
-        password: String,
         image: Data,
         audio: Data,
         prompt: String
@@ -24,14 +22,10 @@ extension Api {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
                 var len = 0
-                let ptr = user.withCString { u in
-                    password.withCString { pw in
-                        imageB64.withCString { i in
-                            audioB64.withCString { a in
-                                prompt.withCString { pr in
-                                    rust_ffi_ltx2_3a2v(u, pw, i, a, pr, p, &len)!
-                                }
-                            }
+                let ptr = imageB64.withCString { i in
+                    audioB64.withCString { a in
+                        prompt.withCString { pr in
+                            rust_ffi_ltx2_3a2v(i, a, pr, p, &len)!
                         }
                     }
                 }

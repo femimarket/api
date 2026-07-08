@@ -13,4 +13,4 @@ enum class Role {
 @Serializable
 data class ChatMessage(val role: Role, val content: String)
 
-expect suspend fun qwen3_6_35b_a3b(user: String, pass: String, messages: List<ChatMessage>): List<ChatMessage>
+expect suspend fun qwen3_6_35b_a3b(messages: List<ChatMessage>): List<ChatMessage>

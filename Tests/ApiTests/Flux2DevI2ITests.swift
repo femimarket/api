@@ -3,12 +3,10 @@ import Foundation
 @testable import Api
 
 struct Flux2DevI2ITests {
-    @Test func fundedUserReturnsRealImage() async throws {
+    @Test func returnsRealImage() async throws {
         let url = Bundle.module.url(forResource: "cactus_man", withExtension: "png")!
         let image = try Data(contentsOf: url)
         let img = await Api.flux2DevI2I(
-            user: testUser,
-            password: testPassword,
             image: image,
             prompt: "place him in a sunlit room"
         )
@@ -21,7 +19,7 @@ struct Flux2DevI2ITests {
         let url = Bundle.module.url(forResource: "cactus_man", withExtension: "png")!
         let image = try Data(contentsOf: url)
         let task = Task {
-            await Api.flux2DevI2I(user: testUser, password: testPassword, image: image, prompt: "place him in a sunlit room")
+            await Api.flux2DevI2I(image: image, prompt: "place him in a sunlit room")
         }
         try await Task.sleep(nanoseconds: 100_000_000)
         task.cancel()

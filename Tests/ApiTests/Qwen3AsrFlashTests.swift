@@ -3,10 +3,10 @@ import Foundation
 @testable import Api
 
 struct Qwen3AsrFlashTests {
-    @Test func fundedUserReturnsLyrics() async throws {
+    @Test func returnsLyrics() async throws {
         let url = Bundle.module.url(forResource: "test_audio", withExtension: "mp3")!
         let audio = try Data(contentsOf: url)
-        let lyrics = await Api.qwen3AsrFlash(user: testUser, password: testPassword, audio: audio)
+        let lyrics = await Api.qwen3AsrFlash(audio: audio)
         #expect(lyrics != "Could not process lyrics")
         #expect(lyrics != "Top up to transcribe lyrics")
         #expect(!lyrics.isEmpty)
@@ -16,7 +16,7 @@ struct Qwen3AsrFlashTests {
         let url = Bundle.module.url(forResource: "test_audio", withExtension: "mp3")!
         let audio = try Data(contentsOf: url)
         let task = Task {
-            await Api.qwen3AsrFlash(user: testUser, password: testPassword, audio: audio)
+            await Api.qwen3AsrFlash(audio: audio)
         }
         try await Task.sleep(nanoseconds: 100_000_000)
         task.cancel()

@@ -15,8 +15,6 @@ extension Api {
     /// `"Could not respond"` on any failure. Always safe to feed the result
     /// straight back as the next call's `messages`.
     public static func qwen3_6_35b_a3b(
-        user: String,
-        password: String,
         messages: [(role: Role, content: String)]
     ) async -> [(role: Role, content: String)] {
         let flag = UnsafeMutablePointer<UInt8>.allocate(capacity: 1)
@@ -30,12 +28,8 @@ extension Api {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
                 var len = 0
-                let ptr = user.withCString { u in
-                    password.withCString { pw in
-                        messagesJson.withCString { m in
-                            rust_ffi_qwen3_6_35b_a3b(u, pw, m, p, &len)!
-                        }
-                    }
+                let ptr = messagesJson.withCString { m in
+                    rust_ffi_qwen3_6_35b_a3b(m, p, &len)!
                 }
                 let body = Data(bytesNoCopy: ptr, count: len, deallocator: .free)
                 if let arr = try? JSONSerialization.jsonObject(with: body) as? [[String: String]],

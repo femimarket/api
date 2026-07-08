@@ -1,12 +1,12 @@
 use crate::{client, resolve_image, URL};
 
-pub(crate) async fn core_flux2_pro(user: String, password: String, prompt: String) -> Vec<u8> {
+pub(crate) async fn core_flux2_pro(prompt: String) -> Vec<u8> {
     let body = serde_json::json!({
         "id": uuid::Uuid::now_v7(),
         "user_id": "",
         "action": { "type": "Flux2Pro", "prompt": prompt, "fal_request_id": "", "file": "" },
     });
-    let req = client().post(URL).json(&body).basic_auth(user, Some(password));
+    let req = client().post(URL).json(&body);
     let (status, bytes) = match req.send().await {
         Ok(r) => {
             let status = r.status().as_u16();
@@ -28,20 +28,16 @@ pub mod native {
 
     #[unsafe(no_mangle)]
     pub extern "C" fn rust_ffi_flux2_pro(
-        user: *const c_char,
-        password: *const c_char,
         prompt: *const c_char,
         cancel_flag: *const u8,
         out_len: *mut usize,
     ) -> *mut u8 {
         let s = |p: *const c_char| unsafe { (!p.is_null()).then(|| CStr::from_ptr(p).to_string_lossy().into_owned()) };
-        let u = s(user).unwrap_or_default();
-        let pw = s(password).unwrap_or_default();
         let pr = s(prompt).unwrap_or_default();
         let cancel_addr = if cancel_flag.is_null() { 0usize } else { cancel_flag as usize };
 
         let bytes = rt().block_on(async move {
-            let do_call = core_flux2_pro(u, pw, pr);
+            let do_call = core_flux2_pro(pr);
             if cancel_addr == 0 {
                 do_call.await
             } else {
@@ -72,8 +68,8 @@ pub mod wasm {
     use wasm_bindgen::prelude::*;
 
     #[wasm_bindgen]
-    pub async fn wasm_flux2_pro(user: String, password: String, prompt: String) -> js_sys::Uint8Array {
-        let bytes = core_flux2_pro(user, password, prompt).await;
+    pub async fn wasm_flux2_pro(prompt: String) -> js_sys::Uint8Array {
+        let bytes = core_flux2_pro(prompt).await;
         js_sys::Uint8Array::from(bytes.as_slice())
     }
 }

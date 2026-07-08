@@ -3,10 +3,8 @@ import Foundation
 @testable import Api
 
 struct Qwen3_6_35b_a3bTests {
-    @Test func fundedUserReturnsReply() async throws {
+    @Test func returnsReply() async throws {
         let result = await Api.qwen3_6_35b_a3b(
-            user: testUser,
-            password: testPassword,
             messages: [(role: .user, content: "say hi in one word")]
         )
         #expect(result.count == 2)
@@ -19,8 +17,6 @@ struct Qwen3_6_35b_a3bTests {
     @Test func cancellationReturnsFallback() async throws {
         let task = Task {
             await Api.qwen3_6_35b_a3b(
-                user: testUser,
-                password: testPassword,
                 messages: [(role: .user, content: "write a long story")]
             )
         }

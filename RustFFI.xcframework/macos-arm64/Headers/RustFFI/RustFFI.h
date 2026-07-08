@@ -10,54 +10,38 @@ extern "C" {
 
 // ---------- API endpoints (fallback resolved inside Rust) ----------
 
-uint8_t *rust_ffi_z_image_turbo(const char *user,
-                                const char *password,
-                                const char *prompt,
+uint8_t *rust_ffi_z_image_turbo(const char *prompt,
                                 const uint8_t *cancel_flag,
                                 size_t *out_len);
 
-uint8_t *rust_ffi_qwen3_asr_flash(const char *user,
-                                  const char *password,
-                                  const char *audio_b64,
+uint8_t *rust_ffi_qwen3_asr_flash(const char *audio_b64,
                                   const uint8_t *cancel_flag,
                                   size_t *out_len);
 
-uint8_t *rust_ffi_qwen3_6_35b_a3b(const char *user,
-                                  const char *password,
-                                  const char *messages_json,
+uint8_t *rust_ffi_qwen3_6_35b_a3b(const char *messages_json,
                                   const uint8_t *cancel_flag,
                                   size_t *out_len);
 
-uint8_t *rust_ffi_nano_banana2(const char *user,
-                               const char *password,
-                               const char *prompt,
+uint8_t *rust_ffi_nano_banana2(const char *prompt,
                                const uint8_t *cancel_flag,
                                size_t *out_len);
 
-uint8_t *rust_ffi_flux2_pro(const char *user,
-                            const char *password,
-                            const char *prompt,
+uint8_t *rust_ffi_flux2_pro(const char *prompt,
                             const uint8_t *cancel_flag,
                             size_t *out_len);
 
-uint8_t *rust_ffi_flux2_dev_i2i(const char *user,
-                                const char *password,
-                                const char *image_b64,
+uint8_t *rust_ffi_flux2_dev_i2i(const char *image_b64,
                                 const char *prompt,
                                 const uint8_t *cancel_flag,
                                 size_t *out_len);
 
-uint8_t *rust_ffi_flux2_klein_i2i(const char *user,
-                                  const char *password,
-                                  const char *image_b64,
+uint8_t *rust_ffi_flux2_klein_i2i(const char *image_b64,
                                   const char *image2_b64,
                                   const char *prompt,
                                   const uint8_t *cancel_flag,
                                   size_t *out_len);
 
-uint8_t *rust_ffi_ltx2_3a2v(const char *user,
-                            const char *password,
-                            const char *image_b64,
+uint8_t *rust_ffi_ltx2_3a2v(const char *image_b64,
                             const char *audio_b64,
                             const char *prompt,
                             const uint8_t *cancel_flag,
@@ -69,6 +53,46 @@ uint8_t *rust_ffi_ltx2_3a2v_comfyui(const char *comfy_key,
                                     const char *prompt,
                                     const uint8_t *cancel_flag,
                                     size_t *out_len);
+
+// ---------- qwen3_6_35b_a3b prompt-gen family (authless; return result string bytes) ----------
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_0gen_music_video_prompt(const uint8_t *cancel_flag,
+                                                          size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_1gen_new_angle_from_xmp_image_prompt(const char *xmp_prompt,
+                                                                       const uint8_t *cancel_flag,
+                                                                       size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_1gen_random_idea_from_xmp_prompt(const char *xmp_prompt,
+                                                                   const uint8_t *cancel_flag,
+                                                                   size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_1gen_3_variants_from_xmp_prompt_as_jsonarray(const char *xmp_prompt,
+                                                                               const uint8_t *cancel_flag,
+                                                                               size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_2gen_augment_idea_from_xmp_prompt_and_text(const char *xmp_prompt,
+                                                                             const char *text,
+                                                                             const uint8_t *cancel_flag,
+                                                                             size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_2gen_50_100_word_multishot_timestamped_prompt_from_2_xmp_image_prompts(const char *xmp_prompt,
+                                                                                                         const char *xmp_prompt2,
+                                                                                                         const uint8_t *cancel_flag,
+                                                                                                         size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_3gen_50_100_word_multishot_timestamped_prompt_from_3_xmp_image_prompts(const char *xmp_prompt,
+                                                                                                         const char *xmp_prompt2,
+                                                                                                         const char *xmp_prompt3,
+                                                                                                         const uint8_t *cancel_flag,
+                                                                                                         size_t *out_len);
+
+uint8_t *rust_ffi_qwen3_6_35b_a3b_4gen_augment_idea_from_3_xmp_prompts_and_text(const char *xmp_prompt,
+                                                                                const char *xmp_prompt2,
+                                                                                const char *xmp_prompt3,
+                                                                                const char *text,
+                                                                                const uint8_t *cancel_flag,
+                                                                                size_t *out_len);
 
 // ---------- ProjectService FFI (Rust owns Documents/; every call takes a filename) ----------
 

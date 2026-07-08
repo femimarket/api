@@ -3,8 +3,6 @@ import RustFFI
 
 extension Api {
     public static func flux2KleinI2I(
-        user: String,
-        password: String,
         image: Data,
         image2: Data,
         prompt: String
@@ -19,14 +17,10 @@ extension Api {
             await Task.detached(priority: .userInitiated) {
                 let p = UnsafePointer<UInt8>(bitPattern: flagAddr)
                 var len = 0
-                let ptr = user.withCString { u in
-                    password.withCString { pw in
-                        imageB64.withCString { i1 in
-                            image2B64.withCString { i2 in
-                                prompt.withCString { pr in
-                                    rust_ffi_flux2_klein_i2i(u, pw, i1, i2, pr, p, &len)!
-                                }
-                            }
+                let ptr = imageB64.withCString { i1 in
+                    image2B64.withCString { i2 in
+                        prompt.withCString { pr in
+                            rust_ffi_flux2_klein_i2i(i1, i2, pr, p, &len)!
                         }
                     }
                 }
